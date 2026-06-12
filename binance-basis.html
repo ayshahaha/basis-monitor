@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Binance Basis Monitor</title>
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  background: #0d1117;
+  color: #e6edf3;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  padding: 16px;
+  min-height: 100vh;
+}
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  margin-bottom: 12px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+}
+h1 {
+  font-size: 18px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+h1 .logo { color: #f0b90b; }
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+#search {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  color: #e6edf3;
+  padding: 7px 12px;
+  border-radius: 6px;
+  width: 180px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+#search:focus { border-color: #58a6ff; }
+#search::placeholder { color: #484f58; }
+.stats {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 12px;
+  color: #8b949e;
+  margin-left: auto;
+}
+.stats .label { color: #6e7681; }
+.stats .val { color: #e6edf3; font-weight: 600; }
+#pauseBtn {
+  background: #21262d;
+  border: 1px solid #30363d;
+  color: #e6edf3;
+  padding: 5px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+#pauseBtn:hover { background: #30363d; }
+#pauseBtn.paused { border-color: #f0b90b; color: #f0b90b; }
+#pauseBtn .icon { margin-right: 4px; }
+#statusDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+}
+#statusDot.live { background: #3fb950; }
+#statusDot.stale { background: #f0b90b; }
+#statusDot.error { background: #f85149; }
+#statusDot.loading { background: #8b949e; animation: pulse 0.8s infinite; }
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  background: #161b22;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+th {
+  background: #1c2128;
+  padding: 10px 14px;
+  text-align: right;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #8b949e;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+  border-bottom: 1px solid #30363d;
+  position: relative;
+}
+th:first-child { text-align: left; padding-left: 18px; }
+th:last-child { padding-right: 18px; }
+th:hover { color: #c9d1d9; }
+th .sort-arrow { margin-left: 3px; opacity: 0.3; font-size: 10px; }
+th.sorted .sort-arrow { opacity: 1; color: #f0b90b; }
+td {
+  padding: 8px 14px;
+  text-align: right;
+  border-top: 1px solid #21262d;
+  font-size: 13px;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+td:first-child { text-align: left; padding-left: 18px; }
+td:last-child { padding-right: 18px; }
+tbody tr:hover td { background: rgba(88, 166, 255, 0.04); }
+.sym {
+  font-weight: 600;
+  color: #58a6ff;
+  cursor: pointer;
+}
+.sym:hover { text-decoration: underline; color: #79c0ff; }
+.price { font-family: 'SF Mono', SFMono-Regular, 'Cascadia Code', 'JetBrains Mono', Consolas, monospace; }
+.basis { font-weight: 700; }
+.basis.positive { color: #3fb950; }
+.basis.negative { color: #f85149; }
+.fund { font-family: 'SF Mono', SFMono-Regular, 'Cascadia Code', 'JetBrains Mono', Consolas, monospace; }
+.fund.positive { color: #3fb950; }
+.fund.negative { color: #f85149; }
+.countdown { font-family: 'SF Mono', SFMono-Regular, 'Cascadia Code', 'JetBrains Mono', Consolas, monospace; font-size: 12px; color: #8b949e; }
+.empty-msg, .error-msg { text-align: center; padding: 48px 20px; color: #8b949e; font-size: 14px; }
+.error-msg { color: #f85149; }
+.retry-btn {
+  background: #21262d;
+  border: 1px solid #30363d;
+  color: #e6edf3;
+  padding: 6px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 12px;
+  font-size: 13px;
+}
+.retry-btn:hover { background: #30363d; }
+footer {
+  text-align: center;
+  padding: 20px;
+  color: #484f58;
+  font-size: 11px;
+}
+@media (max-width: 640px) {
+  body { padding: 8px; }
+  header { padding: 10px 14px; gap: 8px; flex-wrap: wrap; }
+  h1 { font-size: 15px; width: 100%; }
+  .controls { width: 100%; }
+  #search { width: 100%; }
+  th, td { padding: 4px 6px; font-size: 11px; }
+  th:first-child, td:first-child { padding-left: 8px; }
+  th:last-child, td:last-child { padding-right: 8px; }
+  .stats { gap: 6px; font-size: 10px; margin-left: 0; width: 100%; justify-content: space-between; }
+  .tabs { gap: 2px; }
+  .tab { padding: 6px 10px; font-size: 11px; white-space: nowrap; }
+  .table-wrap { margin: 0 -8px; border-radius: 0; border-left: none; border-right: none; }
+  table { min-width: 500px; }
+  .summary-bar { flex-wrap: wrap; gap: 6px; padding: 8px 12px; font-size: 11px; }
+  .summary-bar .bar-wrap { min-width: 40px; max-width: 100px; }
+  .sim-settings { gap: 6px; padding: 8px 12px; }
+  .sim-settings input { width: 50px; font-size: 11px; }
+  .sim-stats { gap: 6px; font-size: 10px; }
+  #activePositions, #closedPositions, #liveHistory { overflow-x: auto; }
+  .pos-table { min-width: 400px; font-size: 11px; }
+  .pos-table th, .pos-table td { padding: 6px 8px; }
+  .howto-section { padding: 10px 12px; }
+  .howto-table { font-size: 11px; }
+  .howto-section li { font-size: 12px; }
+}
+@media (max-width: 480px) {
+  th:nth-child(2), td:nth-child(2),
+  th:nth-child(3), td:nth-child(3) { display: none; }
+  th, td { padding: 3px 4px; font-size: 10px; }
+  th:first-child, td:first-child { padding-left: 6px; }
+  th:last-child, td:last-child { padding-right: 6px; }
+  table { min-width: 320px; }
+  h1 { font-size: 13px; }
+  .tab { padding: 5px 8px; font-size: 10px; }
+  .controls { gap: 6px; }
+  #pauseBtn { font-size: 10px; padding: 4px 8px; }
+}
+.summary-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 20px;
+  margin-bottom: 12px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.summary-item { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.summary-item .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.summary-item .dot.pos { background: #3fb950; }
+.summary-item .dot.neg { background: #f85149; }
+.summary-item .num { font-weight: 700; }
+.summary-item .num.pos { color: #3fb950; }
+.summary-item .num.neg { color: #f85149; }
+.summary-bar .bar-wrap {
+  flex: 1;
+  height: 6px;
+  background: #21262d;
+  border-radius: 3px;
+  overflow: hidden;
+  min-width: 60px;
+  max-width: 200px;
+}
+.summary-bar .bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+.summary-bar .bar-fill.pos { background: #3fb950; }
+.summary-bar .bar-fill.neg { background: #f85149; }
+.summary-bar .sep { color: #30363d; }
+.summary-bar .total { color: #8b949e; font-size: 12px; margin-left: auto; }
+@media (max-width: 640px) {
+  .summary-bar { flex-wrap: wrap; gap: 8px; padding: 8px 14px; font-size: 12px; }
+  .summary-bar .bar-wrap { min-width: 40px; max-width: 100px; }
+}
+
+/* ====== Tabs ====== */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.tab {
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-bottom: none;
+  color: #8b949e;
+  padding: 8px 20px;
+  border-radius: 8px 8px 0 0;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+.tab:hover { color: #e6edf3; background: #1c2128; }
+.tab.active {
+  color: #f0b90b;
+  background: #0d1117;
+  border-color: #30363d;
+}
+.tab-content { display: block; }
+.tab-content.hidden { display: none; }
+
+/* ====== Simulate ====== */
+.sim-settings {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 20px;
+  margin-bottom: 12px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.sim-settings label { color: #8b949e; white-space: nowrap; }
+.sim-settings input {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  color: #e6edf3;
+  padding: 5px 10px;
+  border-radius: 6px;
+  width: 70px;
+  font-size: 13px;
+  outline: none;
+}
+.sim-settings input:focus { border-color: #58a6ff; }
+.sim-settings .sim-btn {
+  background: #21262d;
+  border: 1px solid #30363d;
+  color: #e6edf3;
+  padding: 5px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s;
+}
+.sim-settings .sim-btn:hover { background: #30363d; }
+.sim-settings .sim-btn.danger { border-color: #f85149; color: #f85149; }
+.sim-settings .sim-btn.danger:hover { background: rgba(248,81,73,0.1); }
+.sim-stats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-left: auto;
+  font-size: 12px;
+  color: #8b949e;
+}
+.sim-stats .val { color: #e6edf3; font-weight: 600; }
+.pos-table { width: 100%; border-collapse: collapse; }
+.pos-table th {
+  background: #1c2128;
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #8b949e;
+  border-bottom: 1px solid #30363d;
+}
+.pos-table td {
+  padding: 10px 12px;
+  border-top: 1px solid #21262d;
+  font-size: 13px;
+}
+.pos-table .sym { font-weight: 600; color: #58a6ff; }
+.pos-table .positive { color: #3fb950; }
+.pos-table .negative { color: #f85149; }
+.pos-table .mono { font-family: 'SF Mono', Consolas, monospace; }
+.close-btn {
+  background: #21262d;
+  border: 1px solid #30363d;
+  color: #f85149;
+  padding: 3px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.15s;
+}
+.close-btn:hover { background: rgba(248,81,73,0.15); }
+.section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #e6edf3;
+  padding: 8px 0;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #21262d;
+}
+.section-title .badge {
+  display: inline-block;
+  background: #21262d;
+  color: #f0b90b;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  margin-left: 8px;
+}
+.empty-state {
+  text-align: center;
+  padding: 40px;
+  color: #484f58;
+  font-size: 14px;
+}
+@media (max-width: 640px) {
+  .sim-settings { gap: 8px; padding: 10px 14px; }
+  .sim-settings input { width: 55px; }
+  .sim-stats { gap: 8px; font-size: 11px; }
+}
+
+/* ====== Live Trade ====== */
+.live-warn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  margin-bottom: 12px;
+  background: #2d1f00;
+  border: 1px solid #f0b90b;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #f0b90b;
+}
+.live-warn .icon { font-size: 16px; flex-shrink: 0; }
+.live-section {
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+}
+.live-section-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8b949e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #21262d;
+}
+.api-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.api-row label { font-size: 12px; color: #8b949e; width: 80px; flex-shrink: 0; }
+.api-row input {
+  flex: 1;
+  min-width: 120px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  color: #e6edf3;
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+  font-family: 'SF Mono', Consolas, monospace;
+}
+.api-row input:focus { border-color: #58a6ff; }
+.api-toggle {
+  background: none;
+  border: none;
+  color: #484f58;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+}
+.api-toggle:hover { color: #e6edf3; }
+.api-actions { display: flex; gap: 6px; }
+.api-btn {
+  background: #21262d;
+  border: 1px solid #30363d;
+  color: #e6edf3;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s;
+}
+.api-btn:hover { background: #30363d; }
+.api-btn.primary { border-color: #58a6ff; color: #58a6ff; }
+.api-btn.primary:hover { background: rgba(88,166,255,0.1); }
+.api-btn.danger { border-color: #f85149; color: #f85149; }
+.api-btn.danger:hover { background: rgba(248,81,73,0.1); }
+.api-status {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-size: 12px;
+  color: #8b949e;
+  margin-top: 8px;
+}
+.api-status .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+.api-status .dot.green { background: #3fb950; }
+.api-status .dot.red { background: #f85149; }
+.api-status .dot.yellow { background: #f0b90b; }
+.bal-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  font-size: 13px;
+}
+.bal-item { display: flex; align-items: center; gap: 6px; }
+.bal-item .label { color: #8b949e; }
+.bal-item .val { color: #e6edf3; font-weight: 600; }
+.bal-item .val.pos { color: #3fb950; }
+.bal-item .val.neg { color: #f85149; }
+.session-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+.session-item { font-size: 12px; }
+.session-item .label { color: #8b949e; display: block; margin-bottom: 2px; }
+.session-item .val { font-size: 14px; font-weight: 600; }
+.session-item .val.pos { color: #3fb950; }
+.session-item .val.neg { color: #f85149; }
+.daily-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #8b949e;
+}
+.daily-bar .bar-wrap {
+  flex: 1;
+  height: 6px;
+  background: #21262d;
+  border-radius: 3px;
+  overflow: hidden;
+  max-width: 200px;
+}
+.daily-bar .bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s;
+}
+.daily-bar .bar-fill.profit { background: #3fb950; }
+.daily-bar .bar-fill.loss { background: #f85149; }
+.panic-btn {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
+  background: #2d0f0f;
+  border: 2px solid #f85149;
+  color: #f85149;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.panic-btn:hover { background: #f85149; color: #0d1117; }
+.panic-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.log-list { max-height: 200px; overflow-y: auto; }
+.log-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 12px;
+  font-family: 'SF Mono', Consolas, monospace;
+  border-bottom: 1px solid #1c2128;
+}
+.log-entry:last-child { border-bottom: none; }
+.log-entry .time { color: #484f58; width: 70px; flex-shrink: 0; }
+.log-entry .sym { color: #58a6ff; width: 70px; flex-shrink: 0; font-weight: 600; }
+.log-entry .msg { flex: 1; color: #e6edf3; }
+.log-entry .status { width: 60px; text-align: right; flex-shrink: 0; }
+.log-entry .status.ok { color: #3fb950; }
+.log-entry .status.fail { color: #f85149; }
+.log-entry .status.info { color: #8b949e; }
+@media (max-width: 640px) {
+  .api-row { flex-direction: column; align-items: stretch; }
+  .api-row label { width: auto; }
+  .api-actions { justify-content: center; }
+  .session-grid { grid-template-columns: repeat(2, 1fr); }
+  .bal-row { gap: 12px; }
+}
+/* ====== How To ====== */
+.howto-wrap { padding: 0; }
+.howto-section {
+  padding: 14px 18px;
+  margin-bottom: 12px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  border-radius: 8px;
+}
+.howto-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #e6edf3;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #21262d;
+}
+.howto-section ol, .howto-section ul { margin: 6px 0 6px 18px; }
+.howto-section li {
+  font-size: 13px;
+  color: #c9d1d9;
+  line-height: 1.7;
+  margin-bottom: 4px;
+}
+.howto-section li strong { color: #f0b90b; }
+.howto-code {
+  font-family: 'SF Mono', Consolas, monospace;
+  font-size: 12px;
+  background: #0d1117;
+  border: 1px solid #21262d;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin: 8px 0;
+  color: #e6edf3;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+.howto-note {
+  padding: 10px 14px;
+  margin: 8px 0;
+  background: #1c1500;
+  border-left: 3px solid #f0b90b;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #f0b90b;
+}
+.howto-note.danger { background: #2d0f0f; border-left-color: #f85149; color: #f85149; }
+.howto-note.info { background: #0d1d2d; border-left-color: #58a6ff; color: #58a6ff; }
+.howto-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-right: 4px;
+}
+.howto-tag.yellow { background: #f0b90b22; color: #f0b90b; border: 1px solid #f0b90b44; }
+.howto-tag.green { background: #3fb95022; color: #3fb950; border: 1px solid #3fb95044; }
+.howto-tag.red { background: #f8514922; color: #f85149; border: 1px solid #f8514944; }
+.howto-tag.blue { background: #58a6ff22; color: #58a6ff; border: 1px solid #58a6ff44; }
+.howto-table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 13px; }
+.howto-table th {
+  background: #1c2128;
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: #8b949e;
+  border-bottom: 1px solid #30363d;
+}
+.howto-table td {
+  padding: 8px 12px;
+  border-top: 1px solid #21262d;
+  color: #c9d1d9;
+}
+.howto-table td:first-child { font-weight: 600; color: #e6edf3; white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="logo">◆</span> Basis Monitor</h1>
+  <div class="controls">
+    <input type="text" id="search" placeholder="🔍 ค้นหาเหรียญ..." spellcheck="false" autocomplete="off">
+    <button id="pauseBtn"><span class="icon">⏸</span>Pause</button>
+    <div class="stats">
+      <span id="statusDot" class="loading"></span>
+      <span><span class="label">Pairs</span> <span class="val" id="pairCount">—</span></span>
+      <span><span class="label">Updated</span> <span class="val" id="updateTime">—</span></span>
+    </div>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" data-tab="monitor">📊 Monitor</button>
+  <button class="tab" data-tab="simulate">🎯 Simulate</button>
+
+  <button class="tab" data-tab="howto">📖 How To</button>
+</div>
+
+<div class="tab-content" id="tab-monitor">
+
+<div class="summary-bar" id="summaryBar">
+  <div class="summary-item">
+    <span class="dot pos"></span>
+    <span class="num pos" id="posCount">0</span>
+  </div>
+  <div class="bar-wrap">
+    <div class="bar-fill pos" id="progressPos" style="width:50%"></div>
+  </div>
+  <div class="summary-item">
+    <span class="dot neg"></span>
+    <span class="num neg" id="negCount">0</span>
+  </div>
+  <span class="sep">|</span>
+  <span class="total">Avg Basis: <span id="avgBasis" style="color:#e6edf3">—</span></span>
+  <span class="sep">|</span>
+  <span class="total" id="summaryTotal">0 pairs</span>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th data-key="symbol">Symbol <span class="sort-arrow">▼</span></th>
+      <th data-key="spotPrice">Spot Price <span class="sort-arrow">▼</span></th>
+      <th data-key="futuresPrice">Futures Price <span class="sort-arrow">▼</span></th>
+      <th data-key="basis" class="sorted">Basis % <span class="sort-arrow">▼</span></th>
+      <th data-key="fundingRate">Funding Rate <span class="sort-arrow">▼</span></th>
+      <th data-key="nextFunding">Next Funding <span class="sort-arrow">▼</span></th>
+      <th data-key="maxLeverage">Max Leverage <span class="sort-arrow">▼</span></th>
+    </tr>
+  </thead>
+  <tbody id="tbody">
+<tr><td colspan="7" class="empty-msg">กำลังโหลดข้อมูล...</td></tr>
+  </tbody>
+</table>
+</div>
+
+</div><!-- /tab-monitor -->
+
+<div class="tab-content hidden" id="tab-simulate">
+
+<div class="sim-settings">
+  <label>Entry ≥ <input type="number" id="simEntry" step="0.1" min="0" value="1"> %</label>
+  <label>Size $ <input type="number" id="simSize" step="10" min="10" value="100"></label>
+  <label>Max <input type="number" id="simMax" step="1" min="1" value="5"></label>
+  <button class="sim-btn danger" id="simResetAll">✕ Reset All</button>
+  <div class="sim-stats">
+    <span>Open: <span class="val" id="simOpenCount">0</span></span>
+    <span>Closed: <span class="val" id="simClosedCount">0</span></span>
+    <span>Win Rate: <span class="val" id="simWinRate">—</span></span>
+    <span>Total P&L: <span class="val" id="simTotalPnl">$0.00</span></span>
+  </div>
+</div>
+
+<div class="section-title">Active Positions <span class="badge" id="activeBadge">0</span></div>
+<div id="activePositions"><div class="empty-state">No active positions</div></div>
+
+<div class="section-title">Closed Trades</div>
+<div id="closedPositions"><div class="empty-state">No closed trades</div></div>
+
+</div><!-- /tab-simulate -->
+
+<div class="tab-content hidden" id="tab-howto">
+
+<div class="howto-section">
+  <div class="howto-section-title">📖 How To — Human + AI Guide</div>
+  <div class="howto-note info">ℹ️ Single HTML file, zero dependencies. เปิดบนเครื่องใดก็ได้</div>
+</div>
+
+<div class="howto-section">
+  <div class="howto-section-title">🖥️ วิธีเปิด</div>
+  <ol>
+    <li>ดับเบิลคลิกไฟล์ <code>binance-basis.html</code> เปิดในเบราว์เซอร์ได้เลย</li>
+    <li>หรือใช้ <code>python -m http.server 8080</code> แล้วเปิด <code>http://localhost:8080/binance-basis.html</code></li>
+  </ol>
+</div>
+
+<div class="howto-section">
+  <div class="howto-section-title">📊 Monitor Tab</div>
+  <p style="font-size:13px;color:#c9d1d9;margin-bottom:8px;">ดึงข้อมูล Spot + Futures ทุก 3 วินาที แสดง Basis %, Funding Rate, Next Funding และ Max Leverage ของแต่ละคู่</p>
+  <ul>
+    <li>ค้นหาตามชื่อเหรียญ / กด <code>/</code> เพื่อโฟกัสช่องค้นหา</li>
+    <li>กดหัวตารางเพื่อเรียงลำดับ</li>
+    <li><strong>Basis %</strong> = (Futures Price - Spot Price) / Spot Price</li>
+    <li><strong>Max Leverage</strong> = เลเวอเรจสูงสุดที่ Binance Futures รองรับสำหรับคู่นั้น</li>
+  </ul>
+</div>
+
+<div class="howto-section">
+  <div class="howto-section-title">🎯 Simulate Tab</div>
+  <p style="font-size:13px;color:#c9d1d9;margin-bottom:8px;">ระบบจำลองเทรด (Paper Trading) อิงข้อมูล Basis จริง</p>
+  <ul>
+    <li>เปิดสถานะเมื่อ Basis ≥ Entry ที่ตั้งไว้</li>
+    <li>ปิดสถานะอัตโนมัติเมื่อ Basis < 0%</li>
+    <li>ดู History P&amp;L, Win Rate, Duration</li>
+  </ul>
+  <table class="howto-table">
+    <thead><tr><th>Setting</th><th>Default</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>Entry ≥ %</td><td>1.0</td><td>เปิดเมื่อ Basis เกินค่านี้</td></tr>
+      <tr><td>Size $</td><td>100</td><td>มูลค่าต่อ position</td></tr>
+      <tr><td>Max</td><td>5</td><td>จำนวนสถานะเปิดพร้อมกันสูงสุด</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="howto-section">
+  <div class="howto-section-title">🔧 Technical Notes</div>
+  <ul>
+    <li><strong>Architecture:</strong> 2 tabs — Monitor (HTTP poll 3s), Simulate (paper)</li>
+    <li><strong>Pairs:</strong> All USDT spot + USDT-M perpetual, auto-detected from exchangeInfo</li>
+    <li><strong>Data:</strong> ดึงจาก Binance Public API ไม่ต้องใช้ API Key</li>
+    <li><strong>State:</strong> localStorage key <code>basisSim*</code></li>
+  </ul>
+</div>
+
+</div><!-- /tab-howto -->
+
+<footer>Data from Binance API &middot; Refresh every 3s</footer>
+
+<script>
+// ====== Config ======
+const SPOT_EXCH_INFO = 'https://api.binance.com/api/v3/exchangeInfo';
+const FUT_EXCH_INFO  = 'https://fapi.binance.com/fapi/v1/exchangeInfo';
+const SPOT_TICKER    = 'https://api.binance.com/api/v3/ticker/price';
+const FUT_TICKER     = 'https://fapi.binance.com/fapi/v1/ticker/price';
+const PREMIUM_INDEX  = 'https://fapi.binance.com/fapi/v1/premiumIndex';
+const REFRESH_MS     = 3000;
+
+// ====== State ======
+let symbols = [];
+let futLeverageMap = new Map();
+let sortKey = 'basis';
+let sortDir = 'desc';
+let searchTerm = '';
+let paused = false;
+
+// ====== DOM refs ======
+const tbody = document.getElementById('tbody');
+const searchInput = document.getElementById('search');
+const pauseBtn = document.getElementById('pauseBtn');
+const pairCount = document.getElementById('pairCount');
+const updateTime = document.getElementById('updateTime');
+const statusDot = document.getElementById('statusDot');
+const thMap = new Map();
+document.querySelectorAll('th[data-key]').forEach(el => {
+  const key = el.dataset.key;
+  thMap.set(key, el);
+  el.addEventListener('click', () => onSort(key));
+});
+
+// ====== Helpers ======
+async function fetchJSON(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+function setStatus(state) {
+  statusDot.className = state;
+  statusDot.title = state === 'live' ? 'Live' : state === 'stale' ? 'Stale data' : state === 'error' ? 'Error' : 'Loading...';
+}
+
+// ====== Init ======
+async function init() {
+  try {
+    setStatus('loading');
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">กำลังโหลดข้อมูล...</td></tr>';
+
+    const [spotInfo, futInfo] = await Promise.all([
+      fetchJSON(SPOT_EXCH_INFO),
+      fetchJSON(FUT_EXCH_INFO)
+    ]);
+
+    const spotSet = new Set(
+      spotInfo.symbols
+        .filter(s => s.quoteAsset === 'USDT' && s.status === 'TRADING')
+        .map(s => s.symbol)
+    );
+
+    const futSet = new Set(
+      futInfo.symbols
+        .filter(s => s.quoteAsset === 'USDT' && s.contractType === 'PERPETUAL' && s.status === 'TRADING')
+        .map(s => s.symbol)
+    );
+
+    symbols = [...spotSet].filter(s => futSet.has(s)).sort();
+
+    futLeverageMap = new Map();
+    for (const s of futInfo.symbols) {
+      if (s.quoteAsset === 'USDT' && s.contractType === 'PERPETUAL' && s.status === 'TRADING') {
+        const levFilter = s.filters?.find(f => f.filterType === 'LEVERAGE_FILTER');
+        if (levFilter) {
+          futLeverageMap.set(s.symbol, parseInt(levFilter.maxLeverage));
+        }
+      }
+    }
+
+    if (symbols.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="7" class="error-msg">ไม่พบคู่เทรดที่ตรงกัน</td></tr>';
+      setStatus('error');
+      return;
+    }
+
+    pairCount.textContent = symbols.length;
+    await refresh();
+    setInterval(tick, REFRESH_MS);
+
+  } catch (err) {
+    console.error('Init error:', err);
+    tbody.innerHTML = `    <tr><td colspan="7" class="error-msg">
+      ❌ ไม่สามารถโหลดข้อมูลจาก Binance API<br>
+      <small>${err.message}</small><br>
+      <button class="retry-btn" onclick="location.reload()">ลองใหม่</button>
+    </td></tr>`;
+    setStatus('error');
+  }
+}
+
+// ====== Refresh ======
+let refreshing = false;
+
+function tick() {
+  if (!paused && !refreshing) refresh();
+}
+
+async function refresh() {
+  refreshing = true;
+  try {
+    const [spotPrices, futPrices, premiumData] = await Promise.all([
+      fetchJSON(SPOT_TICKER),
+      fetchJSON(FUT_TICKER),
+      fetchJSON(PREMIUM_INDEX)
+    ]);
+
+    const spotMap = new Map();
+    for (const item of spotPrices) spotMap.set(item.symbol, parseFloat(item.price));
+
+    const futMap = new Map();
+    for (const item of futPrices) futMap.set(item.symbol, parseFloat(item.price));
+
+    const pmMap = new Map();
+    for (const item of premiumData) {
+      pmMap.set(item.symbol, {
+        fundingRate: item.lastFundingRate != null ? parseFloat(item.lastFundingRate) : null,
+        nextFundingTime: item.nextFundingTime != null ? item.nextFundingTime : null
+      });
+    }
+
+    const dataMap = new Map();
+    let hasData = false;
+
+    for (const sym of symbols) {
+      const sp = spotMap.get(sym);
+      const fp = futMap.get(sym);
+      if (sp == null || fp == null || isNaN(sp) || isNaN(fp) || sp === 0 || fp === 0) continue;
+      const basis = (fp - sp) / sp;
+      const pm = pmMap.get(sym);
+      dataMap.set(sym, {
+        spotPrice: sp,
+        futuresPrice: fp,
+        basis,
+        absBasis: Math.abs(basis),
+        fundingRate: pm ? pm.fundingRate : null,
+        nextFundingTime: pm ? pm.nextFundingTime : null,
+        maxLeverage: futLeverageMap.get(sym) || null
+      });
+      hasData = true;
+    }
+
+    if (hasData) {
+      render(dataMap);
+      setStatus('live');
+    }
+
+  } catch (err) {
+    console.error('Refresh error:', err);
+    setStatus('stale');
+  } finally {
+    refreshing = false;
+  }
+}
+
+// ====== Render ======
+function render(dataMap) {
+  const term = searchTerm.toLowerCase();
+  const rows = [];
+
+  let pos = 0, neg = 0;
+  let sumBasis = 0;
+
+  for (const [sym, d] of dataMap) {
+    if (d.basis >= 0) pos++; else neg++;
+    sumBasis += d.basis;
+    if (term && !sym.toLowerCase().includes(term)) continue;
+
+    const bp = d.basis * 100;
+    const fr = d.fundingRate;
+
+    rows.push({
+      sym,
+      spotPrice: d.spotPrice,
+      futuresPrice: d.futuresPrice,
+      basis: bp,
+      absBasis: d.absBasis,
+      fundingRate: fr != null ? fr * 100 : null,
+      nextFundingTime: d.nextFundingTime,
+      maxLeverage: d.maxLeverage
+    });
+  }
+
+  const total = pos + neg;
+  const pctPos = total ? (pos / total * 100) : 50;
+
+  document.getElementById('posCount').textContent = pos;
+  document.getElementById('negCount').textContent = neg;
+  document.getElementById('progressPos').style.width = pctPos + '%';
+  document.getElementById('summaryTotal').textContent = total + ' pairs';
+
+  const avg = total ? sumBasis / total : 0;
+  document.getElementById('avgBasis').textContent = formatBasis(avg * 100);
+  document.getElementById('avgBasis').className = avg >= 0 ? 'num pos' : 'num neg';
+
+  const key = sortKey === 'absBasis' ? 'absBasis' : sortKey;
+  const dir = sortKey === 'symbol' ? (sortDir === 'asc' ? 1 : -1) : (sortDir === 'desc' ? 1 : -1);
+
+  rows.sort((a, b) => {
+    switch (key) {
+      case 'symbol': return a.sym < b.sym ? -dir : a.sym > b.sym ? dir : 0;
+      case 'nextFunding':
+        return ((a.nextFundingTime ?? 0) - (b.nextFundingTime ?? 0)) * dir;
+      default: return ((a[key] ?? 0) - (b[key] ?? 0)) * dir;
+    }
+  });
+
+  let html = '';
+  for (const r of rows) {
+    html += '<tr>' +
+      `<td><a class="sym" href="https://www.binance.com/en/futures/${r.sym}" target="_blank">${r.sym}</a></td>` +
+      `<td class="price">${formatPrice(r.spotPrice)}</td>` +
+      `<td class="price">${formatPrice(r.futuresPrice)}</td>` +
+      `<td class="basis ${r.basis >= 0 ? 'positive' : 'negative'}">${formatBasis(r.basis)}</td>` +
+      `<td class="fund ${r.fundingRate != null ? (r.fundingRate >= 0 ? 'positive' : 'negative') : ''}">${r.fundingRate != null ? formatFundingRate(r.fundingRate) : '—'}</td>` +
+      `<td class="countdown">${r.nextFundingTime ? formatCountdown(r.nextFundingTime) : '—'}</td>` +
+      `<td>${r.maxLeverage ? r.maxLeverage + 'x' : '—'}</td>` +
+      '</tr>';
+  }
+
+  tbody.innerHTML = html || '<tr><td colspan="7" class="empty-msg">ไม่พบเหรียญที่ค้นหา</td></tr>';
+  updateTime.textContent = new Date().toLocaleTimeString('th-TH', { hour12: false }) + ' น.';
+}
+
+// ====== Formatters ======
+function formatPrice(n) {
+  if (n == null || isNaN(n)) return '—';
+  if (n >= 1000) return n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (n >= 1) return n.toFixed(4);
+  if (n >= 0.01) return n.toFixed(6);
+  return n.toFixed(8);
+}
+
+function formatBasis(pct) {
+  const abs = Math.abs(pct);
+  let s;
+  if (abs >= 10) s = pct.toFixed(2);
+  else if (abs >= 1) s = pct.toFixed(3);
+  else if (abs >= 0.1) s = pct.toFixed(4);
+  else s = pct.toFixed(5);
+  return (pct > 0 ? '+' : '') + s + '%';
+}
+
+function formatFundingRate(pct) {
+  if (pct == null || isNaN(pct)) return '—';
+  const abs = Math.abs(pct);
+  let s;
+  if (abs >= 10) s = pct.toFixed(2);
+  else if (abs >= 1) s = pct.toFixed(3);
+  else s = pct.toFixed(4);
+  return (pct > 0 ? '+' : '') + s + '%';
+}
+
+function formatCountdown(ms) {
+  const diff = ms - Date.now();
+  if (diff <= 0) return '<span style="color:#f0b90b">Funding</span>';
+  const totalSec = Math.floor(diff / 1000);
+  const h = Math.floor(totalSec / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
+}
+
+// ====== Sort ======
+function onSort(key) {
+  if (sortKey === key) {
+    sortDir = sortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortKey = key;
+    sortDir = (key === 'symbol') ? 'asc' : 'desc';
+  }
+  updateSortUI();
+  render();
+}
+
+function updateSortUI() {
+  thMap.forEach((el, k) => {
+    el.classList.toggle('sorted', k === sortKey);
+    const arrow = el.querySelector('.sort-arrow');
+    if (arrow) arrow.textContent = (k === sortKey) ? (sortDir === 'asc' ? '▲' : '▼') : '▼';
+  });
+}
+
+// ====== Pause ======
+pauseBtn.addEventListener('click', () => {
+  paused = !paused;
+  pauseBtn.classList.toggle('paused', paused);
+  pauseBtn.innerHTML = paused ? '<span class="icon">▶</span>Resume' : '<span class="icon">⏸</span>Pause';
+});
+
+// ====== Store last data for search/sort re-render ======
+let lastDataMap = new Map();
+
+// Wrap render to use cached data when called without args
+const _origRender = render;
+render = function(dataMap) {
+  if (arguments.length > 0) lastDataMap = dataMap;
+  _origRender(lastDataMap);
+};
+
+// ====== Search ======
+searchInput.addEventListener('input', () => {
+  searchTerm = searchInput.value;
+  render();
+});
+
+// ====== Keyboard ======
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+    e.preventDefault();
+    searchInput.focus();
+  }
+});
+
+// ====== Tabs ======
+document.querySelectorAll('.tab').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+    document.getElementById('tab-' + el.dataset.tab).classList.remove('hidden');
+  });
+});
+
+// ====== Simulate ======
+let positions = { open: [], closed: [] };
+
+function loadPositions() {
+  try {
+    const raw = localStorage.getItem('basisSim');
+    if (raw) positions = JSON.parse(raw);
+  } catch (e) { /* ignore */ }
+}
+function savePositions() {
+  localStorage.setItem('basisSim', JSON.stringify(positions));
+}
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem('basisSimSettings');
+    if (raw) {
+      const s = JSON.parse(raw);
+      document.getElementById('simEntry').value = s.entry ?? 1;
+      document.getElementById('simSize').value = s.size ?? 100;
+      document.getElementById('simMax').value = s.max ?? 5;
+    }
+  } catch (e) { /* ignore */ }
+}
+function saveSettings() {
+  localStorage.setItem('basisSimSettings', JSON.stringify({
+    entry: parseFloat(document.getElementById('simEntry').value) || 1,
+    size: parseFloat(document.getElementById('simSize').value) || 100,
+    max: parseInt(document.getElementById('simMax').value) || 5
+  }));
+}
+
+document.getElementById('simEntry').addEventListener('change', saveSettings);
+document.getElementById('simSize').addEventListener('change', saveSettings);
+document.getElementById('simMax').addEventListener('change', saveSettings);
+
+document.getElementById('simResetAll').addEventListener('click', () => {
+  if (confirm('Reset all positions?')) {
+    positions = { open: [], closed: [] };
+    savePositions();
+    renderPositions();
+  }
+});
+
+let simTimer = 0;
+function getEntryThreshold() { return parseFloat(document.getElementById('simEntry').value) / 100; }
+function getSize() { return parseFloat(document.getElementById('simSize').value) || 100; }
+function getMax() { return parseInt(document.getElementById('simMax').value) || 5; }
+
+function checkPositions(dataMap) {
+  const entryThresh = getEntryThreshold();
+  const size = getSize();
+  const max = getMax();
+
+  if (entryThresh <= 0) return;
+
+  const openSyms = new Set(positions.open.map(p => p.symbol));
+
+  for (const [sym, d] of dataMap) {
+    const basisPct = d.basis * 100;
+
+    // Auto-close: basis < 0%
+    const existing = positions.open.find(p => p.symbol === sym);
+    if (existing) {
+      existing.currentBasis = basisPct;
+      if (basisPct < 0) {
+        closePosition(existing, 0);
+        continue;
+      }
+    }
+
+    // Auto-open: basis > threshold AND no existing position AND under max
+    if (basisPct > entryThresh * 100 && !openSyms.has(sym) && positions.open.length < max) {
+      openPosition(sym, basisPct, size);
+      openSyms.add(sym);
+    }
+  }
+
+  renderPositions();
+  savePositions();
+}
+
+function openPosition(symbol, basis, size) {
+  const p = {
+    id: Date.now() + '_' + symbol,
+    symbol,
+    entryBasis: basis,
+    currentBasis: basis,
+    entryTime: Date.now(),
+    size
+  };
+  positions.open.push(p);
+}
+
+function closePosition(pos, exitBasis) {
+  const pctReturn = pos.entryBasis > 0 ? ((pos.entryBasis - exitBasis) / pos.entryBasis * 100) : 0;
+  const pnl = (pos.entryBasis - exitBasis) / 100 * pos.size;
+
+  positions.closed.push({
+    symbol: pos.symbol,
+    entryBasis: pos.entryBasis,
+    exitBasis: exitBasis,
+    entryTime: pos.entryTime,
+    exitTime: Date.now(),
+    size: pos.size,
+    return: pctReturn,
+    pnl: pnl
+  });
+
+  positions.open = positions.open.filter(p => p.id !== pos.id);
+}
+
+function renderPositions() {
+  const openEl = document.getElementById('activePositions');
+  const closedEl = document.getElementById('closedPositions');
+
+  // Active
+  if (positions.open.length === 0) {
+    openEl.innerHTML = '<div class="empty-state">No active positions</div>';
+  } else {
+    let html = '<table class="pos-table"><thead><tr><th>Symbol</th><th>Entry Basis</th><th>Current Basis</th><th>Return</th><th>P&L</th><th>Duration</th><th></th></tr></thead><tbody>';
+    for (const p of positions.open) {
+      const ret = p.entryBasis > 0 ? (p.entryBasis - p.currentBasis) / p.entryBasis * 100 : 0;
+      const pnl = (p.entryBasis - p.currentBasis) / 100 * p.size;
+      const retCls = ret >= 0 ? 'positive' : 'negative';
+      const pnlCls = pnl >= 0 ? 'positive' : 'negative';
+      const dur = formatDuration(p.entryTime);
+      html += `<tr>
+        <td><span class="sym">${p.symbol}</span></td>
+        <td class="mono positive">+${p.entryBasis.toFixed(3)}%</td>
+        <td class="mono">${p.currentBasis >= 0 ? '+' : ''}${p.currentBasis.toFixed(3)}%</td>
+        <td class="mono ${retCls}">${ret >= 0 ? '+' : ''}${ret.toFixed(1)}%</td>
+        <td class="mono ${pnlCls}">${pnl >= 0 ? '+' : ''}$${pnl.toFixed(2)}</td>
+        <td class="mono" style="color:#8b949e">${dur}</td>
+        <td><button class="close-btn" data-id="${p.id}">Close</button></td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+    openEl.innerHTML = html;
+
+    openEl.querySelectorAll('.close-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const p = positions.open.find(x => x.id === btn.dataset.id);
+        if (p) closePosition(p, p.currentBasis);
+        savePositions();
+        renderPositions();
+      });
+    });
+  }
+
+  // Closed
+  const closed = positions.closed;
+  if (closed.length === 0) {
+    closedEl.innerHTML = '<div class="empty-state">No closed trades</div>';
+  } else {
+    let html = '<table class="pos-table"><thead><tr><th>Symbol</th><th>Entry → Exit</th><th>Return</th><th>P&L</th><th>Held</th></tr></thead><tbody>';
+    const recent = [...closed].reverse().slice(0, 50);
+    for (const p of recent) {
+      const retCls = p.return >= 0 ? 'positive' : 'negative';
+      const pnlCls = p.pnl >= 0 ? 'positive' : 'negative';
+      const dur = formatDuration(p.entryTime, p.exitTime);
+      html += `<tr>
+        <td><span class="sym">${p.symbol}</span></td>
+        <td class="mono">${p.entryBasis >= 0 ? '+' : ''}${p.entryBasis.toFixed(3)}% → ${p.exitBasis >= 0 ? '+' : ''}${p.exitBasis.toFixed(3)}%</td>
+        <td class="mono ${retCls}">${p.return >= 0 ? '+' : ''}${p.return.toFixed(1)}%</td>
+        <td class="mono ${pnlCls}">${p.pnl >= 0 ? '+' : ''}$${p.pnl.toFixed(2)}</td>
+        <td class="mono" style="color:#8b949e">${dur}</td>
+      </tr>`;
+    }
+    html += '</tbody></table>';
+    closedEl.innerHTML = html;
+  }
+
+  // Stats
+  document.getElementById('activeBadge').textContent = positions.open.length;
+  document.getElementById('simOpenCount').textContent = positions.open.length;
+  document.getElementById('simClosedCount').textContent = closed.length;
+
+  const wins = closed.filter(p => p.pnl > 0).length;
+  document.getElementById('simWinRate').textContent = closed.length > 0 ? (wins / closed.length * 100).toFixed(0) + '%' : '—';
+
+  const totalPnl = closed.reduce((s, p) => s + p.pnl, 0) + positions.open.reduce((s, p) => s + ((p.entryBasis - p.currentBasis) / 100 * p.size), 0);
+  document.getElementById('simTotalPnl').textContent = (totalPnl >= 0 ? '+' : '') + '$' + totalPnl.toFixed(2);
+  document.getElementById('simTotalPnl').className = 'val ' + (totalPnl >= 0 ? 'positive' : 'negative');
+}
+
+function formatDuration(from, to) {
+  const diff = ((to || Date.now()) - from) / 1000;
+  if (diff < 60) return Math.floor(diff) + 's';
+  if (diff < 3600) return Math.floor(diff / 60) + 'm ' + Math.floor(diff % 60) + 's';
+  return Math.floor(diff / 3600) + 'h ' + Math.floor((diff % 3600) / 60) + 'm';
+}
+
+
+
+// ====== Hook into refresh ======
+const _origRefresh2 = refresh;
+refresh = async function() {
+  await _origRefresh2();
+  if (lastDataMap.size > 0) {
+    checkPositions(lastDataMap);
+  }
+};
+
+loadPositions();
+loadSettings();
+renderPositions();
+
+init();
+</script>
+</body>
+</html>
