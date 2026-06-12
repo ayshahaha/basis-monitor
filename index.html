@@ -562,6 +562,112 @@ footer {
   .session-grid { grid-template-columns: repeat(2, 1fr); }
   .bal-row { gap: 12px; }
 }
+/* ====== Favorites ====== */
+.star { cursor: pointer; font-size: 14px; color: #484f58; margin-right: 4px; user-select: none; transition: color 0.15s; }
+.star:hover { color: #f0b90b; }
+.star.active { color: #f0b90b; }
+/* ====== 24h Change ====== */
+.chg { font-family: 'SF Mono', Consolas, monospace; font-weight: 600; }
+.chg.pos { color: #3fb950; }
+.chg.neg { color: #f85149; }
+/* ====== Volume ====== */
+.vol { font-family: 'SF Mono', Consolas, monospace; font-size: 11px; color: #8b949e; }
+/* ====== Sparkline ====== */
+.spark-cell { padding: 4px 6px !important; width: 90px; }
+.spark-cell canvas { display: block; width: 80px; height: 20px; }
+/* ====== Interval Select ====== */
+#intervalSelect {
+  background: #0d1117; border: 1px solid #30363d; color: #e6edf3;
+  padding: 5px 8px; border-radius: 6px; font-size: 12px; outline: none;
+  cursor: pointer;
+}
+#intervalSelect:focus { border-color: #58a6ff; }
+/* ====== Alert Button ====== */
+.alert-btn {
+  background: #21262d; border: 1px solid #30363d; color: #e6edf3;
+  padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px;
+  transition: all 0.15s; white-space: nowrap; position: relative;
+}
+.alert-btn:hover { background: #30363d; }
+.alert-btn.has-alerts { border-color: #f0b90b; color: #f0b90b; }
+.alert-badge {
+  position: absolute; top: -4px; right: -4px; background: #f85149;
+  color: #fff; font-size: 9px; font-weight: 700; padding: 1px 5px;
+  border-radius: 8px; line-height: 1;
+}
+/* ====== Alert Modal ====== */
+.alert-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  z-index: 100; align-items: center; justify-content: center;
+}
+.alert-overlay.open { display: flex; }
+.alert-modal {
+  background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+  width: 90%; max-width: 460px; max-height: 80vh; overflow-y: auto;
+  padding: 20px; position: relative;
+}
+.alert-modal-title { font-size: 16px; font-weight: 700; margin-bottom: 14px; color: #e6edf3; }
+.alert-modal-close {
+  position: absolute; top: 14px; right: 16px; background: none; border: none;
+  color: #8b949e; font-size: 20px; cursor: pointer;
+}
+.alert-modal-close:hover { color: #e6edf3; }
+.alert-form { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid #21262d; }
+.alert-form select, .alert-form input {
+  background: #0d1117; border: 1px solid #30363d; color: #e6edf3;
+  padding: 6px 10px; border-radius: 6px; font-size: 13px; outline: none;
+}
+.alert-form select { width: 110px; }
+.alert-form input { width: 80px; }
+.alert-form select:focus, .alert-form input:focus { border-color: #58a6ff; }
+.alert-form .add-btn {
+  background: #21262d; border: 1px solid #58a6ff; color: #58a6ff;
+  padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: 12px;
+}
+.alert-form .add-btn:hover { background: rgba(88,166,255,0.1); }
+.alert-list { list-style: none; padding: 0; margin: 0; }
+.alert-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: 6px; font-size: 13px;
+  border-bottom: 1px solid #1c2128;
+}
+.alert-item:last-child { border-bottom: none; }
+.alert-item .sym { color: #58a6ff; font-weight: 600; width: 80px; }
+.alert-item .dir { color: #8b949e; width: 50px; }
+.alert-item .thresh { color: #f0b90b; font-weight: 600; font-family: 'SF Mono', Consolas, monospace; }
+.alert-item .status { cursor: pointer; font-size: 16px; margin-left: auto; }
+.alert-item .del-btn {
+  background: none; border: none; color: #484f58; cursor: pointer; font-size: 16px;
+  padding: 2px 6px; border-radius: 4px;
+}
+.alert-item .del-btn:hover { color: #f85149; background: rgba(248,81,73,0.1); }
+.alert-empty { color: #484f58; text-align: center; padding: 20px; font-size: 13px; }
+/* ====== Mover Buttons ====== */
+.mover-btn {
+  background: #21262d; border: 1px solid #30363d; color: #8b949e;
+  padding: 3px 8px; border-radius: 4px; cursor: pointer; font-size: 11px;
+  transition: all 0.15s; white-space: nowrap;
+}
+.mover-btn:hover { background: #30363d; color: #e6edf3; }
+.csv-btn {
+  background: #21262d; border: 1px solid #30363d; color: #8b949e;
+  padding: 3px 10px; border-radius: 4px; cursor: pointer; font-size: 11px;
+  transition: all 0.15s; white-space: nowrap;
+}
+.csv-btn:hover { background: #30363d; color: #e6edf3; }
+/* ====== Responsive updates ====== */
+@media (max-width: 640px) {
+  .alert-modal { width: 95%; padding: 14px; }
+  #intervalSelect { font-size: 11px; padding: 4px 6px; }
+  .alert-btn { font-size: 11px; padding: 4px 8px; }
+  .star { font-size: 12px; }
+  .spark-cell { display: none; }
+}
+@media (max-width: 480px) {
+  th:nth-child(5), td:nth-child(5),
+  th:nth-child(6), td:nth-child(6),
+  th:nth-child(9), td:nth-child(9) { display: none; }
+}
 /* ====== How To ====== */
 .howto-wrap { padding: 0; }
 .howto-section {
@@ -649,6 +755,14 @@ footer {
   <div class="controls">
     <input type="text" id="search" placeholder="🔍 ค้นหาเหรียญ..." spellcheck="false" autocomplete="off">
     <button id="pauseBtn"><span class="icon">⏸</span>Pause</button>
+    <select id="intervalSelect">
+      <option value="1000">1s</option>
+      <option value="3000" selected>3s</option>
+      <option value="5000">5s</option>
+      <option value="10000">10s</option>
+      <option value="30000">30s</option>
+    </select>
+    <button class="alert-btn" id="alertBtn">🔔 Alerts</button>
     <div class="stats">
       <span id="statusDot" class="loading"></span>
       <span><span class="label">Pairs</span> <span class="val" id="pairCount">—</span></span>
@@ -682,6 +796,10 @@ footer {
   <span class="total">Avg Basis: <span id="avgBasis" style="color:#e6edf3">—</span></span>
   <span class="sep">|</span>
   <span class="total" id="summaryTotal">0 pairs</span>
+  <span class="sep">|</span>
+  <button class="mover-btn" id="topMoverBtn">⬆ Top</button>
+  <button class="mover-btn" id="bottomMoverBtn">⬇ Bottom</button>
+  <button class="csv-btn" id="csvBtn">⬇ CSV</button>
 </div>
 
 <div class="table-wrap">
@@ -689,15 +807,18 @@ footer {
   <thead>
     <tr>
       <th data-key="symbol">Symbol <span class="sort-arrow">▼</span></th>
-      <th data-key="spotPrice">Spot Price <span class="sort-arrow">▼</span></th>
-      <th data-key="futuresPrice">Futures Price <span class="sort-arrow">▼</span></th>
+      <th data-key="spotPrice">Spot <span class="sort-arrow">▼</span></th>
+      <th data-key="futuresPrice">Futures <span class="sort-arrow">▼</span></th>
       <th data-key="basis" class="sorted">Basis % <span class="sort-arrow">▼</span></th>
-      <th data-key="fundingRate">Funding Rate <span class="sort-arrow">▼</span></th>
+      <th data-key="change24h">24h Chg <span class="sort-arrow">▼</span></th>
+      <th data-key="volume24h">Vol 24h <span class="sort-arrow">▼</span></th>
+      <th data-key="fundingRate">Funding <span class="sort-arrow">▼</span></th>
       <th data-key="nextFunding">Next Funding <span class="sort-arrow">▼</span></th>
+      <th>Sparkline</th>
     </tr>
   </thead>
   <tbody id="tbody">
-<tr><td colspan="6" class="empty-msg">กำลังโหลดข้อมูล...</td></tr>
+<tr><td colspan="9" class="empty-msg">กำลังโหลดข้อมูล...</td></tr>
   </tbody>
 </table>
 </div>
@@ -744,12 +865,14 @@ footer {
 
 <div class="howto-section">
   <div class="howto-section-title">📊 Monitor Tab</div>
-  <p style="font-size:13px;color:#c9d1d9;margin-bottom:8px;">ดึงข้อมูล Spot + Futures ทุก 3 วินาที แสดง Basis %, Funding Rate, Next Funding และ Max Leverage ของแต่ละคู่</p>
+  <p style="font-size:13px;color:#c9d1d9;margin-bottom:8px;">ดึงข้อมูล Spot + Futures ทุก 1-30s แสดง Basis %, 24h Change, Volume, Funding Rate, Sparkline</p>
   <ul>
+    <li>☆ <strong>Favorite</strong> — คลิกดาวเพื่อปักหมุดเหรียญที่ติดตามขึ้นด้านบน</li>
+    <li>🔔 <strong>Alert</strong> — ตั้งแจ้งเตือนเมื่อ Basis ถึงค่าที่กำหนด</li>
+    <li>⬆ Top / ⬇ Bottom — เลื่อนไปหาเหรียญ Basis สูงสุด/ต่ำสุด</li>
+    <li>⬇ CSV — ดาวน์โหลดข้อมูลทั้งหมดเป็นไฟล์ CSV</li>
     <li>ค้นหาตามชื่อเหรียญ / กด <code>/</code> เพื่อโฟกัสช่องค้นหา</li>
-    <li>กดหัวตารางเพื่อเรียงลำดับ</li>
-    <li><strong>Basis %</strong> = (Futures Price - Spot Price) / Spot Price</li>
-    <li><strong>Max Leverage</strong> = เลเวอเรจสูงสุดที่ Binance Futures รองรับสำหรับคู่นั้น</li>
+    <li>กดหัวตารางเพื่อเรียงลำดับ | <strong>Basis %</strong> = (Futures - Spot) / Spot</li>
   </ul>
 </div>
 
@@ -783,16 +906,37 @@ footer {
 
 </div><!-- /tab-howto -->
 
-<footer>Data from Binance API &middot; Refresh every 3s</footer>
+<div class="alert-overlay" id="alertOverlay">
+  <div class="alert-modal">
+    <button class="alert-modal-close" id="alertModalClose">&times;</button>
+    <div class="alert-modal-title">🔔 Price Alerts</div>
+    <div class="alert-form">
+      <select id="alertSymbol">
+        <option value="">— Symbol —</option>
+      </select>
+      <select id="alertDir">
+        <option value="above">≥</option>
+        <option value="below">≤</option>
+      </select>
+      <input type="number" id="alertThreshold" step="0.01" placeholder="%" value="1">
+      <button class="add-btn" id="alertAddBtn">+ Add</button>
+    </div>
+    <ul class="alert-list" id="alertList"><li class="alert-empty">No alerts set</li></ul>
+  </div>
+</div>
+
+<footer>Data from Binance API &middot; Auto-refresh &middot; Favorite ⭐ &middot; Alert 🔔 &middot; CSV ⬇</footer>
 
 <script>
 // ====== Config ======
-const SPOT_EXCH_INFO = 'https://api.binance.com/api/v3/exchangeInfo';
-const FUT_EXCH_INFO  = 'https://fapi.binance.com/fapi/v1/exchangeInfo';
-const SPOT_TICKER    = 'https://api.binance.com/api/v3/ticker/price';
-const FUT_TICKER     = 'https://fapi.binance.com/fapi/v1/ticker/price';
-const PREMIUM_INDEX  = 'https://fapi.binance.com/fapi/v1/premiumIndex';
-const REFRESH_MS     = 3000;
+const SPOT_EXCH_INFO  = 'https://api.binance.com/api/v3/exchangeInfo';
+const FUT_EXCH_INFO   = 'https://fapi.binance.com/fapi/v1/exchangeInfo';
+const SPOT_TICKER     = 'https://api.binance.com/api/v3/ticker/price';
+const FUT_TICKER      = 'https://fapi.binance.com/fapi/v1/ticker/price';
+const PREMIUM_INDEX   = 'https://fapi.binance.com/fapi/v1/premiumIndex';
+const SPOT_TICKER_24H = 'https://api.binance.com/api/v3/ticker/24hr';
+const FUT_TICKER_24H  = 'https://fapi.binance.com/fapi/v1/ticker/24hr';
+const DEFAULT_REFRESH = 3000;
 
 // ====== State ======
 let symbols = [];
@@ -800,6 +944,11 @@ let sortKey = 'basis';
 let sortDir = 'desc';
 let searchTerm = '';
 let paused = false;
+let favorites = [];
+let alerts = [];
+let basisHistory = new Map();
+let refreshTimer = null;
+let refreshMs = DEFAULT_REFRESH;
 
 // ====== DOM refs ======
 const tbody = document.getElementById('tbody');
@@ -828,10 +977,28 @@ function setStatus(state) {
 }
 
 // ====== Init ======
+function startRefresh(ms) {
+  if (refreshTimer) clearInterval(refreshTimer);
+  refreshTimer = setInterval(tick, ms);
+  refreshMs = ms;
+}
+function reloadRefresh() { startRefresh(refreshMs); }
+
 async function init() {
   try {
     setStatus('loading');
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">กำลังโหลดข้อมูล...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" class="empty-msg">กำลังโหลด...</td></tr>';
+
+    // Load persisted state
+    try {
+      const f = localStorage.getItem('basisFav');
+      if (f) favorites = JSON.parse(f);
+      const a = localStorage.getItem('basisAlerts');
+      if (a) alerts = JSON.parse(a);
+      const r = localStorage.getItem('basisInterval');
+      if (r) refreshMs = parseInt(r) || DEFAULT_REFRESH;
+    } catch(e) {}
+    document.getElementById('intervalSelect').value = String(refreshMs);
 
     const [spotInfo, futInfo] = await Promise.all([
       fetchJSON(SPOT_EXCH_INFO),
@@ -853,18 +1020,26 @@ async function init() {
     symbols = [...spotSet].filter(s => futSet.has(s)).sort();
 
     if (symbols.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6" class="error-msg">ไม่พบคู่เทรดที่ตรงกัน</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="9" class="error-msg">ไม่พบคู่เทรดที่ตรงกัน</td></tr>';
       setStatus('error');
       return;
     }
 
+    // Populate alert symbol selector
+    const sel = document.getElementById('alertSymbol');
+    for (const s of symbols) {
+      const opt = document.createElement('option');
+      opt.value = s; opt.textContent = s;
+      sel.appendChild(opt);
+    }
+
     pairCount.textContent = symbols.length;
     await refresh();
-    setInterval(tick, REFRESH_MS);
+    startRefresh(refreshMs);
 
   } catch (err) {
     console.error('Init error:', err);
-    tbody.innerHTML = `    <tr><td colspan="6" class="error-msg">
+    tbody.innerHTML = `    <tr><td colspan="9" class="error-msg">
       ❌ ไม่สามารถโหลดข้อมูลจาก Binance API<br>
       <small>${err.message}</small><br>
       <button class="retry-btn" onclick="location.reload()">ลองใหม่</button>
@@ -883,10 +1058,12 @@ function tick() {
 async function refresh() {
   refreshing = true;
   try {
-    const [spotPrices, futPrices, premiumData] = await Promise.all([
+    const [spotPrices, futPrices, premiumData, spot24h, fut24h] = await Promise.all([
       fetchJSON(SPOT_TICKER),
       fetchJSON(FUT_TICKER),
-      fetchJSON(PREMIUM_INDEX)
+      fetchJSON(PREMIUM_INDEX),
+      fetchJSON(SPOT_TICKER_24H),
+      fetchJSON(FUT_TICKER_24H)
     ]);
 
     const spotMap = new Map();
@@ -894,6 +1071,22 @@ async function refresh() {
 
     const futMap = new Map();
     for (const item of futPrices) futMap.set(item.symbol, parseFloat(item.price));
+
+    const spot24hMap = new Map();
+    for (const item of spot24h) {
+      spot24hMap.set(item.symbol, {
+        change: item.priceChangePercent != null ? parseFloat(item.priceChangePercent) : null,
+        volume: item.quoteVolume != null ? parseFloat(item.quoteVolume) : null
+      });
+    }
+
+    const fut24hMap = new Map();
+    for (const item of fut24h) {
+      fut24hMap.set(item.symbol, {
+        change: item.priceChangePercent != null ? parseFloat(item.priceChangePercent) : null,
+        volume: item.quoteVolume != null ? parseFloat(item.quoteVolume) : null
+      });
+    }
 
     const pmMap = new Map();
     for (const item of premiumData) {
@@ -912,11 +1105,24 @@ async function refresh() {
       if (sp == null || fp == null || isNaN(sp) || isNaN(fp) || sp === 0 || fp === 0) continue;
       const basis = (fp - sp) / sp;
       const pm = pmMap.get(sym);
+      const s24 = spot24hMap.get(sym);
+      const f24 = fut24hMap.get(sym);
+
+      // Update basis history for sparkline
+      const bp = basis * 100;
+      if (!basisHistory.has(sym)) basisHistory.set(sym, []);
+      const hist = basisHistory.get(sym);
+      hist.push(bp);
+      if (hist.length > 60) hist.shift();
+
       dataMap.set(sym, {
         spotPrice: sp,
         futuresPrice: fp,
         basis,
         absBasis: Math.abs(basis),
+        change24h: s24 ? s24.change : null,
+        volume24h: s24 ? s24.volume : null,
+        changeFut24h: f24 ? f24.change : null,
         fundingRate: pm ? pm.fundingRate : null,
         nextFundingTime: pm ? pm.nextFundingTime : null
       });
@@ -926,6 +1132,7 @@ async function refresh() {
     if (hasData) {
       render(dataMap);
       setStatus('live');
+      checkAlerts(dataMap);
     }
 
   } catch (err) {
@@ -952,14 +1159,20 @@ function render(dataMap) {
     const bp = d.basis * 100;
     const fr = d.fundingRate;
 
+    const isFav = favorites.includes(sym);
     rows.push({
       sym,
+      isFav,
       spotPrice: d.spotPrice,
       futuresPrice: d.futuresPrice,
       basis: bp,
       absBasis: d.absBasis,
+      change24h: d.change24h,
+      volume24h: d.volume24h,
+      changeFut24h: d.changeFut24h,
       fundingRate: fr != null ? fr * 100 : null,
-      nextFundingTime: d.nextFundingTime
+      nextFundingTime: d.nextFundingTime,
+      basisHistory: basisHistory.get(sym) || []
     });
   }
 
@@ -975,10 +1188,13 @@ function render(dataMap) {
   document.getElementById('avgBasis').textContent = formatBasis(avg * 100);
   document.getElementById('avgBasis').className = avg >= 0 ? 'num pos' : 'num neg';
 
+  // Sort: favorites first, then by selected key
   const key = sortKey === 'absBasis' ? 'absBasis' : sortKey;
   const dir = sortKey === 'symbol' ? (sortDir === 'asc' ? 1 : -1) : (sortDir === 'desc' ? 1 : -1);
 
   rows.sort((a, b) => {
+    // Fav priority
+    if (a.isFav !== b.isFav) return a.isFav ? -1 : 1;
     switch (key) {
       case 'symbol': return a.sym < b.sym ? -dir : a.sym > b.sym ? dir : 0;
       case 'nextFunding':
@@ -989,17 +1205,40 @@ function render(dataMap) {
 
   let html = '';
   for (const r of rows) {
+    const starCls = r.isFav ? 'star active' : 'star';
+    const starChr = r.isFav ? '★' : '☆';
+    const chgCls = r.change24h != null ? (r.change24h >= 0 ? 'pos' : 'neg') : '';
+    const chgVal = r.change24h != null ? (r.change24h >= 0 ? '+' : '') + r.change24h.toFixed(2) + '%' : '—';
+    const volVal = r.volume24h != null ? '$' + formatVolume(r.volume24h) : '—';
+    const hist = r.basisHistory;
+
     html += '<tr>' +
-      `<td><a class="sym" href="https://www.binance.com/en/futures/${r.sym}" target="_blank">${r.sym}</a></td>` +
+      `<td><span class="${starCls}" data-sym="${r.sym}">${starChr}</span><a class="sym" href="https://www.binance.com/en/futures/${r.sym}" target="_blank">${r.sym}</a></td>` +
       `<td class="price">${formatPrice(r.spotPrice)}</td>` +
       `<td class="price">${formatPrice(r.futuresPrice)}</td>` +
       `<td class="basis ${r.basis >= 0 ? 'positive' : 'negative'}">${formatBasis(r.basis)}</td>` +
+      `<td class="chg ${chgCls}">${chgVal}</td>` +
+      `<td class="vol">${volVal}</td>` +
       `<td class="fund ${r.fundingRate != null ? (r.fundingRate >= 0 ? 'positive' : 'negative') : ''}">${r.fundingRate != null ? formatFundingRate(r.fundingRate) : '—'}</td>` +
       `<td class="countdown">${r.nextFundingTime ? formatCountdown(r.nextFundingTime) : '—'}</td>` +
+      `<td class="spark-cell"><canvas data-hist="${r.sym}" width="80" height="20"></canvas></td>` +
       '</tr>';
   }
 
-  tbody.innerHTML = html || '<tr><td colspan="6" class="empty-msg">ไม่พบเหรียญที่ค้นหา</td></tr>';
+  tbody.innerHTML = html || '<tr><td colspan="9" class="empty-msg">ไม่พบเหรียญที่ค้นหา</td></tr>';
+
+  // Bind star clicks
+  tbody.querySelectorAll('.star').forEach(el => {
+    el.addEventListener('click', () => toggleFav(el.dataset.sym));
+  });
+
+  // Draw sparklines
+  tbody.querySelectorAll('canvas[data-hist]').forEach(canvas => {
+    const sym = canvas.dataset.hist;
+    const h = basisHistory.get(sym) || [];
+    drawSparkline(canvas, h);
+  });
+
   updateTime.textContent = new Date().toLocaleTimeString('th-TH', { hour12: false }) + ' น.';
 }
 
@@ -1298,7 +1537,213 @@ function formatDuration(from, to) {
   return Math.floor(diff / 3600) + 'h ' + Math.floor((diff % 3600) / 60) + 'm';
 }
 
+// ====== Favorites ======
+function toggleFav(sym) {
+  const idx = favorites.indexOf(sym);
+  if (idx >= 0) favorites.splice(idx, 1);
+  else favorites.push(sym);
+  localStorage.setItem('basisFav', JSON.stringify(favorites));
+  render();
+}
 
+// ====== Volume Formatter ======
+function formatVolume(n) {
+  if (n == null || isNaN(n)) return '—';
+  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+  return n.toFixed(0);
+}
+
+// ====== Sparkline ======
+function drawSparkline(canvas, data) {
+  if (!canvas || data.length < 2) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const pad = 2;
+
+  ctx.strokeStyle = min >= 0 ? '#3fb950' : max <= 0 ? '#f85149' : '#f0b90b';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+
+  for (let i = 0; i < data.length; i++) {
+    const x = pad + (i / (data.length - 1)) * (w - pad * 2);
+    const y = h - pad - ((data[i] - min) / range) * (h - pad * 2);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+}
+
+// ====== Alerts ======
+function saveAlerts() {
+  localStorage.setItem('basisAlerts', JSON.stringify(alerts));
+  updateAlertBadge();
+}
+
+function updateAlertBadge() {
+  const btn = document.getElementById('alertBtn');
+  const enabled = alerts.filter(a => a.enabled).length;
+  btn.classList.toggle('has-alerts', enabled > 0);
+  const existing = btn.querySelector('.alert-badge');
+  if (existing) existing.remove();
+  if (enabled > 0) {
+    const b = document.createElement('span');
+    b.className = 'alert-badge'; b.textContent = enabled;
+    btn.appendChild(b);
+  }
+}
+
+function checkAlerts(dataMap) {
+  for (const a of alerts) {
+    if (!a.enabled) continue;
+    const d = dataMap.get(a.symbol);
+    if (!d) continue;
+    const bp = d.basis * 100;
+    let triggered = false;
+    if (a.direction === 'above' && bp >= a.threshold) triggered = true;
+    if (a.direction === 'below' && bp <= a.threshold) triggered = true;
+    if (triggered) {
+      a.enabled = false;
+      saveAlerts();
+      if (Notification.permission === 'granted') {
+        try {
+          new Notification('🔔 Basis Alert', {
+            body: `${a.symbol} Basis ${bp >= 0 ? '+' : ''}${bp.toFixed(3)}% ${a.direction === 'above' ? '≥' : '≤'} ${a.threshold}%`,
+            icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">📊</text></svg>'
+          });
+        } catch(e) {}
+      }
+    }
+  }
+  renderAlertList();
+}
+
+function renderAlertList() {
+  const el = document.getElementById('alertList');
+  if (alerts.length === 0) {
+    el.innerHTML = '<li class="alert-empty">No alerts set</li>';
+    return;
+  }
+  let html = '';
+  for (let i = 0; i < alerts.length; i++) {
+    const a = alerts[i];
+    html += `<li class="alert-item">
+      <span class="sym">${a.symbol}</span>
+      <span class="dir">${a.direction === 'above' ? '≥' : '≤'}</span>
+      <span class="thresh">${a.threshold}%</span>
+      <span class="status" data-idx="${i}">${a.enabled ? '🔔' : '🔕'}</span>
+      <button class="del-btn" data-idx="${i}">&times;</button>
+    </li>`;
+  }
+  el.innerHTML = html;
+  el.querySelectorAll('.status').forEach(el2 => {
+    el2.addEventListener('click', () => {
+      const idx = parseInt(el2.dataset.idx);
+      alerts[idx].enabled = !alerts[idx].enabled;
+      saveAlerts(); renderAlertList();
+    });
+  });
+  el.querySelectorAll('.del-btn').forEach(el2 => {
+    el2.addEventListener('click', () => {
+      alerts.splice(parseInt(el2.dataset.idx), 1);
+      saveAlerts(); renderAlertList();
+    });
+  });
+}
+
+// ====== CSV Export ======
+function exportCSV() {
+  const rows = [];
+  rows.push('Symbol,SpotPrice,FuturesPrice,Basis%,24hChange%,Volume24h,FundingRate,NextFunding');
+  for (const [sym, d] of lastDataMap) {
+    const bp = (d.basis * 100).toFixed(4);
+    const chg = d.change24h != null ? d.change24h.toFixed(2) : '';
+    const vol = d.volume24h != null ? d.volume24h.toFixed(2) : '';
+    const fr = d.fundingRate != null ? (d.fundingRate * 100).toFixed(4) : '';
+    const nf = d.nextFundingTime ? new Date(d.nextFundingTime).toISOString() : '';
+    rows.push(`"${sym}",${d.spotPrice},${d.futuresPrice},${bp},${chg},${vol},${fr},${nf}`);
+  }
+  const csv = rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'basis_data_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ====== Top / Bottom Mover ======
+function scrollToMover(top) {
+  const rows = tbody.querySelectorAll('tr');
+  if (rows.length === 0) return;
+  // Find valid data rows (skip empty/error)
+  const dataRows = [];
+  rows.forEach((tr, i) => {
+    const td = tr.querySelector('td');
+    if (td && td.classList.contains('empty-msg')) return;
+    if (td && td.classList.contains('error-msg')) return;
+    dataRows.push(tr);
+  });
+  if (dataRows.length === 0) return;
+  const target = top ? dataRows[0] : dataRows[dataRows.length - 1];
+  target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  target.style.transition = 'background 0.5s';
+  target.style.background = 'rgba(240,185,11,0.08)';
+  setTimeout(() => { target.style.background = ''; }, 1500);
+}
+
+// ====== Event Bindings ======
+document.getElementById('intervalSelect').addEventListener('change', function() {
+  refreshMs = parseInt(this.value);
+  localStorage.setItem('basisInterval', String(refreshMs));
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    startRefresh(refreshMs);
+  }
+});
+
+document.getElementById('alertBtn').addEventListener('click', () => {
+  // Populate symbol select if empty
+  const sel = document.getElementById('alertSymbol');
+  if (sel.options.length <= 1 && symbols.length > 0) {
+    for (const s of symbols) {
+      const opt = document.createElement('option');
+      opt.value = s; opt.textContent = s;
+      sel.appendChild(opt);
+    }
+  }
+  renderAlertList();
+  document.getElementById('alertOverlay').classList.add('open');
+});
+document.getElementById('alertModalClose').addEventListener('click', () => {
+  document.getElementById('alertOverlay').classList.remove('open');
+});
+document.getElementById('alertOverlay').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) document.getElementById('alertOverlay').classList.remove('open');
+});
+document.getElementById('alertAddBtn').addEventListener('click', () => {
+  const sym = document.getElementById('alertSymbol').value;
+  const dir = document.getElementById('alertDir').value;
+  const thresh = parseFloat(document.getElementById('alertThreshold').value);
+  if (!sym || isNaN(thresh)) return;
+  alerts.push({ symbol: sym, direction: dir, threshold: thresh, enabled: true });
+  saveAlerts();
+  renderAlertList();
+});
+
+document.getElementById('csvBtn').addEventListener('click', exportCSV);
+document.getElementById('topMoverBtn').addEventListener('click', () => scrollToMover(true));
+document.getElementById('bottomMoverBtn').addEventListener('click', () => scrollToMover(false));
+
+// Request notification permission
+if ('Notification' in window && Notification.permission === 'default') {
+  Notification.requestPermission();
+}
 
 // ====== Hook into refresh ======
 const _origRefresh2 = refresh;
