@@ -631,6 +631,14 @@ footer {
 .filter-actions button.primary:hover { background: rgba(88,166,255,0.1); }
 .filter-actions button.danger { border-color: #f85149; color: #f85149; }
 .filter-actions button.danger:hover { background: rgba(248,81,73,0.1); }
+.preset-row { display: flex; flex-wrap: wrap; gap: 4px; width: 100%; margin-bottom: 8px; }
+.preset-btn {
+  background: #0d1117; border: 1px solid #30363d; color: #8b949e;
+  padding: 3px 10px; border-radius: 12px; cursor: pointer; font-size: 11px;
+  transition: all 0.15s; white-space: nowrap;
+}
+.preset-btn:hover { border-color: #58a6ff; color: #e6edf3; }
+.preset-btn.active { background: rgba(88,166,255,0.15); border-color: #58a6ff; color: #58a6ff; }
 @media (max-width: 640px) {
   .filter-panel.open { flex-direction: column; align-items: stretch; }
   .filter-group { flex-wrap: wrap; }
@@ -827,6 +835,15 @@ footer {
   </div>
   <div class="filter-tags" id="filterTags"></div>
   <div class="filter-panel" id="filterPanel">
+    <div class="preset-row">
+      <button class="preset-btn active" data-preset="posBasis">Pos Basis</button>
+      <button class="preset-btn" data-preset="basis1">Basis &gt; 1%</button>
+      <button class="preset-btn" data-preset="basis2">Basis &gt; 2%</button>
+      <button class="preset-btn" data-preset="negBasis">Neg Basis</button>
+      <button class="preset-btn" data-preset="highVol">High Vol</button>
+      <button class="preset-btn" data-preset="posFund">Pos Fund</button>
+      <button class="preset-btn" data-preset="favOnly">Fav Only</button>
+    </div>
     <div class="filter-group">
       <label>Basis</label>
       <input type="number" id="fBasisMin" step="0.01" placeholder="min">
@@ -1040,6 +1057,15 @@ let basisHistory = new Map();
 let refreshTimer = null;
 let refreshMs = DEFAULT_REFRESH;
 let filters = { basisMin: null, basisMax: null, chgMin: null, chgMax: null, volMin: null, fundingDir: '', favOnly: false };
+const PRESETS = {
+  posBasis: { label: 'Pos Basis', filters: { basisMin: 0, chgMin: 1 } },
+  basis1:   { label: 'Basis > 1%', filters: { basisMin: 1 } },
+  basis2:   { label: 'Basis > 2%', filters: { basisMin: 2 } },
+  negBasis: { label: 'Neg Basis', filters: { basisMax: 0 } },
+  highVol:  { label: 'High Vol',  filters: { volMin: 10000000 } },
+  posFund:  { label: 'Pos Fund',  filters: { fundingDir: 'pos' } },
+  favOnly:  { label: 'Fav Only',  filters: { favOnly: true } }
+};
 
 // ====== DOM refs ======
 const tbody = document.getElementById('tbody');
@@ -1089,11 +1115,12 @@ async function init() {
       const r = localStorage.getItem('basisInterval');
       if (r) refreshMs = parseInt(r) || DEFAULT_REFRESH;
       const fl = localStorage.getItem('basisFilters');
-      if (fl) filters = JSON.parse(fl);
+      if (fl) { filters = JSON.parse(fl); } else { filters = { ...PRESETS.posBasis.filters }; }
     } catch(e) {}
     document.getElementById('intervalSelect').value = String(refreshMs);
     syncFilterUI();
     renderFilterTags();
+    updatePresetHighlights();
 
     const [spotInfo, futInfo] = await Promise.all([
       fetchJSON(SPOT_EXCH_INFO),
@@ -1845,6 +1872,28 @@ if ('Notification' in window && Notification.permission === 'default') {
 }
 
 // ====== Filter ======
+function updatePresetHighlights() {
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    const id = btn.dataset.preset;
+    const p = PRESETS[id];
+    if (!p) { btn.classList.remove('active'); return; }
+    const match = Object.keys(p.filters).every(k => filters[k] === p.filters[k])
+      && Object.keys(filters).every(k => k in p.filters || filters[k] === null || filters[k] === '' || filters[k] === false);
+    btn.classList.toggle('active', match);
+  });
+}
+function applyPreset(id) {
+  const p = PRESETS[id];
+  if (!p) return;
+  filters = { basisMin: null, basisMax: null, chgMin: null, chgMax: null, volMin: null, fundingDir: '', favOnly: false, ...p.filters };
+  saveFilters();
+  syncFilterUI();
+  renderFilterTags();
+  updatePresetHighlights();
+  document.getElementById('filterPanel').classList.remove('open');
+  document.getElementById('filterBtn').classList.remove('active');
+  render();
+}
 function saveFilters() {
   localStorage.setItem('basisFilters', JSON.stringify(filters));
 }
@@ -1922,6 +1971,7 @@ document.getElementById('filterApply').addEventListener('click', () => {
   filters.favOnly = document.getElementById('fFavOnly').checked;
   saveFilters();
   renderFilterTags();
+  updatePresetHighlights();
   document.getElementById('filterPanel').classList.remove('open');
   document.getElementById('filterBtn').classList.remove('active');
   render();
@@ -1931,9 +1981,13 @@ document.getElementById('filterReset').addEventListener('click', () => {
   saveFilters();
   syncFilterUI();
   renderFilterTags();
+  updatePresetHighlights();
   document.getElementById('filterPanel').classList.remove('open');
   document.getElementById('filterBtn').classList.remove('active');
   render();
+});
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => applyPreset(btn.dataset.preset));
 });
 
 // ====== Hook into refresh ======
