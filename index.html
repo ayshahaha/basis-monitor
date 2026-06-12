@@ -694,11 +694,10 @@ footer {
       <th data-key="basis" class="sorted">Basis % <span class="sort-arrow">▼</span></th>
       <th data-key="fundingRate">Funding Rate <span class="sort-arrow">▼</span></th>
       <th data-key="nextFunding">Next Funding <span class="sort-arrow">▼</span></th>
-      <th data-key="maxLeverage">Max Leverage <span class="sort-arrow">▼</span></th>
     </tr>
   </thead>
   <tbody id="tbody">
-<tr><td colspan="7" class="empty-msg">กำลังโหลดข้อมูล...</td></tr>
+<tr><td colspan="6" class="empty-msg">กำลังโหลดข้อมูล...</td></tr>
   </tbody>
 </table>
 </div>
@@ -797,7 +796,6 @@ const REFRESH_MS     = 3000;
 
 // ====== State ======
 let symbols = [];
-let futLeverageMap = new Map();
 let sortKey = 'basis';
 let sortDir = 'desc';
 let searchTerm = '';
@@ -833,7 +831,7 @@ function setStatus(state) {
 async function init() {
   try {
     setStatus('loading');
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">กำลังโหลดข้อมูล...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">กำลังโหลดข้อมูล...</td></tr>';
 
     const [spotInfo, futInfo] = await Promise.all([
       fetchJSON(SPOT_EXCH_INFO),
@@ -854,18 +852,8 @@ async function init() {
 
     symbols = [...spotSet].filter(s => futSet.has(s)).sort();
 
-    futLeverageMap = new Map();
-    for (const s of futInfo.symbols) {
-      if (s.quoteAsset === 'USDT' && s.contractType === 'PERPETUAL' && s.status === 'TRADING') {
-        const levFilter = s.filters?.find(f => f.filterType === 'LEVERAGE_FILTER');
-        if (levFilter) {
-          futLeverageMap.set(s.symbol, parseInt(levFilter.maxLeverage));
-        }
-      }
-    }
-
     if (symbols.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="7" class="error-msg">ไม่พบคู่เทรดที่ตรงกัน</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="6" class="error-msg">ไม่พบคู่เทรดที่ตรงกัน</td></tr>';
       setStatus('error');
       return;
     }
@@ -876,7 +864,7 @@ async function init() {
 
   } catch (err) {
     console.error('Init error:', err);
-    tbody.innerHTML = `    <tr><td colspan="7" class="error-msg">
+    tbody.innerHTML = `    <tr><td colspan="6" class="error-msg">
       ❌ ไม่สามารถโหลดข้อมูลจาก Binance API<br>
       <small>${err.message}</small><br>
       <button class="retry-btn" onclick="location.reload()">ลองใหม่</button>
@@ -930,8 +918,7 @@ async function refresh() {
         basis,
         absBasis: Math.abs(basis),
         fundingRate: pm ? pm.fundingRate : null,
-        nextFundingTime: pm ? pm.nextFundingTime : null,
-        maxLeverage: futLeverageMap.get(sym) || null
+        nextFundingTime: pm ? pm.nextFundingTime : null
       });
       hasData = true;
     }
@@ -972,8 +959,7 @@ function render(dataMap) {
       basis: bp,
       absBasis: d.absBasis,
       fundingRate: fr != null ? fr * 100 : null,
-      nextFundingTime: d.nextFundingTime,
-      maxLeverage: d.maxLeverage
+      nextFundingTime: d.nextFundingTime
     });
   }
 
@@ -1010,11 +996,10 @@ function render(dataMap) {
       `<td class="basis ${r.basis >= 0 ? 'positive' : 'negative'}">${formatBasis(r.basis)}</td>` +
       `<td class="fund ${r.fundingRate != null ? (r.fundingRate >= 0 ? 'positive' : 'negative') : ''}">${r.fundingRate != null ? formatFundingRate(r.fundingRate) : '—'}</td>` +
       `<td class="countdown">${r.nextFundingTime ? formatCountdown(r.nextFundingTime) : '—'}</td>` +
-      `<td>${r.maxLeverage ? r.maxLeverage + 'x' : '—'}</td>` +
       '</tr>';
   }
 
-  tbody.innerHTML = html || '<tr><td colspan="7" class="empty-msg">ไม่พบเหรียญที่ค้นหา</td></tr>';
+  tbody.innerHTML = html || '<tr><td colspan="6" class="empty-msg">ไม่พบเหรียญที่ค้นหา</td></tr>';
   updateTime.textContent = new Date().toLocaleTimeString('th-TH', { hour12: false }) + ' น.';
 }
 
