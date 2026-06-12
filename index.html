@@ -582,6 +582,61 @@ footer {
   cursor: pointer;
 }
 #intervalSelect:focus { border-color: #58a6ff; }
+/* ====== Filter ====== */
+.filter-btn {
+  background: #21262d; border: 1px solid #30363d; color: #e6edf3;
+  padding: 5px 10px; border-radius: 6px; cursor: pointer; font-size: 12px;
+  transition: all 0.15s; white-space: nowrap;
+}
+.filter-btn:hover { background: #30363d; }
+.filter-btn.active { border-color: #58a6ff; color: #58a6ff; }
+.filter-tags {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 4px;
+  width: 100%; min-height: 0; padding: 2px 0;
+}
+.filter-tag {
+  display: inline-flex; align-items: center; gap: 3px;
+  background: #1c2128; border: 1px solid #30363d; border-radius: 4px;
+  padding: 2px 8px; font-size: 11px; color: #e6edf3; white-space: nowrap;
+}
+.filter-tag .remove {
+  cursor: pointer; color: #484f58; font-size: 14px; line-height: 1; margin-left: 2px;
+}
+.filter-tag .remove:hover { color: #f85149; }
+.tag-label { color: #8b949e; margin-right: 2px; }
+.tag-val { color: #f0b90b; font-weight: 600; }
+.filter-panel {
+  display: none; width: 100%; padding: 10px 0 2px 0;
+  border-top: 1px solid #21262d; margin-top: 4px;
+}
+.filter-panel.open { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.filter-group { display: flex; align-items: center; gap: 4px; font-size: 12px; color: #8b949e; }
+.filter-group label { white-space: nowrap; }
+.filter-group input, .filter-group select {
+  background: #0d1117; border: 1px solid #30363d; color: #e6edf3;
+  padding: 4px 6px; border-radius: 4px; font-size: 11px; outline: none; width: 56px;
+}
+.filter-group input:focus, .filter-group select:focus { border-color: #58a6ff; }
+.filter-group select { width: auto; cursor: pointer; }
+.filter-group input.wide { width: 80px; }
+.filter-group input[type=checkbox] { width: auto; margin: 0; }
+.filter-actions { display: flex; gap: 6px; margin-left: auto; }
+.filter-actions button {
+  background: #21262d; border: 1px solid #30363d; color: #e6edf3;
+  padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 11px;
+  transition: all 0.15s;
+}
+.filter-actions button:hover { background: #30363d; }
+.filter-actions button.primary { border-color: #58a6ff; color: #58a6ff; }
+.filter-actions button.primary:hover { background: rgba(88,166,255,0.1); }
+.filter-actions button.danger { border-color: #f85149; color: #f85149; }
+.filter-actions button.danger:hover { background: rgba(248,81,73,0.1); }
+@media (max-width: 640px) {
+  .filter-panel.open { flex-direction: column; align-items: stretch; }
+  .filter-group { flex-wrap: wrap; }
+  .filter-actions { margin-left: 0; }
+  .filter-actions button { flex: 1; }
+}
 /* ====== Alert Button ====== */
 .alert-btn {
   background: #21262d; border: 1px solid #30363d; color: #e6edf3;
@@ -763,10 +818,45 @@ footer {
       <option value="30000">30s</option>
     </select>
     <button class="alert-btn" id="alertBtn">🔔 Alerts</button>
+    <button class="filter-btn" id="filterBtn">🔍 Filter</button>
     <div class="stats">
       <span id="statusDot" class="loading"></span>
       <span><span class="label">Pairs</span> <span class="val" id="pairCount">—</span></span>
       <span><span class="label">Updated</span> <span class="val" id="updateTime">—</span></span>
+    </div>
+  </div>
+  <div class="filter-tags" id="filterTags"></div>
+  <div class="filter-panel" id="filterPanel">
+    <div class="filter-group">
+      <label>Basis</label>
+      <input type="number" id="fBasisMin" step="0.01" placeholder="min">
+      <span>—</span>
+      <input type="number" id="fBasisMax" step="0.01" placeholder="max">
+    </div>
+    <div class="filter-group">
+      <label>24h Chg</label>
+      <input type="number" id="fChgMin" step="0.1" placeholder="min">
+      <span>—</span>
+      <input type="number" id="fChgMax" step="0.1" placeholder="max">
+    </div>
+    <div class="filter-group">
+      <label>Vol ≥</label>
+      <input type="number" id="fVolMin" step="100000" class="wide" placeholder="$">
+    </div>
+    <div class="filter-group">
+      <label>Funding</label>
+      <select id="fFundingDir">
+        <option value="">All</option>
+        <option value="pos">Pos</option>
+        <option value="neg">Neg</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label><input type="checkbox" id="fFavOnly"> ★ Fav</label>
+    </div>
+    <div class="filter-actions">
+      <button class="primary" id="filterApply">Apply</button>
+      <button class="danger" id="filterReset">Reset</button>
     </div>
   </div>
 </header>
@@ -949,6 +1039,7 @@ let alerts = [];
 let basisHistory = new Map();
 let refreshTimer = null;
 let refreshMs = DEFAULT_REFRESH;
+let filters = { basisMin: null, basisMax: null, chgMin: null, chgMax: null, volMin: null, fundingDir: '', favOnly: false };
 
 // ====== DOM refs ======
 const tbody = document.getElementById('tbody');
@@ -997,8 +1088,12 @@ async function init() {
       if (a) alerts = JSON.parse(a);
       const r = localStorage.getItem('basisInterval');
       if (r) refreshMs = parseInt(r) || DEFAULT_REFRESH;
+      const fl = localStorage.getItem('basisFilters');
+      if (fl) filters = JSON.parse(fl);
     } catch(e) {}
     document.getElementById('intervalSelect').value = String(refreshMs);
+    syncFilterUI();
+    renderFilterTags();
 
     const [spotInfo, futInfo] = await Promise.all([
       fetchJSON(SPOT_EXCH_INFO),
@@ -1317,7 +1412,11 @@ let lastDataMap = new Map();
 const _origRender = render;
 render = function(dataMap) {
   if (arguments.length > 0) lastDataMap = dataMap;
-  _origRender(lastDataMap);
+  // Apply filters on a clone so original dataMap stays intact for Simulate
+  const clone = new Map();
+  for (const [k, v] of lastDataMap) clone.set(k, { ...v });
+  applyFilters(clone);
+  _origRender(clone);
 };
 
 // ====== Search ======
@@ -1744,6 +1843,98 @@ document.getElementById('bottomMoverBtn').addEventListener('click', () => scroll
 if ('Notification' in window && Notification.permission === 'default') {
   Notification.requestPermission();
 }
+
+// ====== Filter ======
+function saveFilters() {
+  localStorage.setItem('basisFilters', JSON.stringify(filters));
+}
+
+function applyFilters(dataMap) {
+  for (const [sym, d] of [...dataMap]) {
+    const bp = d.basis * 100;
+    if (filters.favOnly && !favorites.includes(sym)) { dataMap.delete(sym); continue; }
+    if (filters.basisMin != null && !isNaN(filters.basisMin) && bp < filters.basisMin) { dataMap.delete(sym); continue; }
+    if (filters.basisMax != null && !isNaN(filters.basisMax) && bp > filters.basisMax) { dataMap.delete(sym); continue; }
+    if (filters.chgMin != null && !isNaN(filters.chgMin) && (d.change24h == null || d.change24h < filters.chgMin)) { dataMap.delete(sym); continue; }
+    if (filters.chgMax != null && !isNaN(filters.chgMax) && (d.change24h == null || d.change24h > filters.chgMax)) { dataMap.delete(sym); continue; }
+    if (filters.volMin != null && !isNaN(filters.volMin) && (d.volume24h == null || d.volume24h < filters.volMin)) { dataMap.delete(sym); continue; }
+    if (filters.fundingDir === 'pos' && (d.fundingRate == null || d.fundingRate <= 0)) { dataMap.delete(sym); continue; }
+    if (filters.fundingDir === 'neg' && (d.fundingRate == null || d.fundingRate >= 0)) { dataMap.delete(sym); continue; }
+  }
+  return dataMap;
+}
+
+function renderFilterTags() {
+  const el = document.getElementById('filterTags');
+  const tags = [];
+  const add = (label, val, key) => tags.push(`<span class="filter-tag"><span class="tag-label">${label}</span><span class="tag-val">${val}</span><span class="remove" data-key="${key}">×</span></span>`);
+  if (filters.basisMin != null) add('Basis ≥', filters.basisMin + '%', 'basisMin');
+  if (filters.basisMax != null) add('Basis ≤', filters.basisMax + '%', 'basisMax');
+  if (filters.chgMin != null) add('Chg ≥', filters.chgMin + '%', 'chgMin');
+  if (filters.chgMax != null) add('Chg ≤', filters.chgMax + '%', 'chgMax');
+  if (filters.volMin != null) add('Vol ≥', '$' + formatVolume(filters.volMin), 'volMin');
+  if (filters.fundingDir === 'pos') add('Funding', 'Pos', 'fundingDir');
+  if (filters.fundingDir === 'neg') add('Funding', 'Neg', 'fundingDir');
+  if (filters.favOnly) add('', '★ Fav only', 'favOnly');
+  el.innerHTML = tags.join('');
+  el.querySelectorAll('.remove').forEach(el2 => {
+    el2.addEventListener('click', () => {
+      const key = el2.dataset.key;
+      if (key === 'basisMin') filters.basisMin = null;
+      else if (key === 'basisMax') filters.basisMax = null;
+      else if (key === 'chgMin') filters.chgMin = null;
+      else if (key === 'chgMax') filters.chgMax = null;
+      else if (key === 'volMin') filters.volMin = null;
+      else if (key === 'fundingDir') filters.fundingDir = '';
+      else if (key === 'favOnly') filters.favOnly = false;
+      saveFilters();
+      syncFilterUI();
+      renderFilterTags();
+      render();
+    });
+  });
+}
+
+function syncFilterUI() {
+  document.getElementById('fBasisMin').value = filters.basisMin != null ? filters.basisMin : '';
+  document.getElementById('fBasisMax').value = filters.basisMax != null ? filters.basisMax : '';
+  document.getElementById('fChgMin').value = filters.chgMin != null ? filters.chgMin : '';
+  document.getElementById('fChgMax').value = filters.chgMax != null ? filters.chgMax : '';
+  document.getElementById('fVolMin').value = filters.volMin != null ? filters.volMin : '';
+  document.getElementById('fFundingDir').value = filters.fundingDir || '';
+  document.getElementById('fFavOnly').checked = filters.favOnly;
+}
+
+// Filter event bindings
+document.getElementById('filterBtn').addEventListener('click', () => {
+  document.getElementById('filterPanel').classList.toggle('open');
+  document.getElementById('filterBtn').classList.toggle('active');
+  syncFilterUI();
+});
+document.getElementById('filterApply').addEventListener('click', () => {
+  const toNum = (id) => { const v = document.getElementById(id).value; return v === '' ? null : parseFloat(v); };
+  filters.basisMin = toNum('fBasisMin');
+  filters.basisMax = toNum('fBasisMax');
+  filters.chgMin = toNum('fChgMin');
+  filters.chgMax = toNum('fChgMax');
+  filters.volMin = toNum('fVolMin');
+  filters.fundingDir = document.getElementById('fFundingDir').value;
+  filters.favOnly = document.getElementById('fFavOnly').checked;
+  saveFilters();
+  renderFilterTags();
+  document.getElementById('filterPanel').classList.remove('open');
+  document.getElementById('filterBtn').classList.remove('active');
+  render();
+});
+document.getElementById('filterReset').addEventListener('click', () => {
+  filters = { basisMin: null, basisMax: null, chgMin: null, chgMax: null, volMin: null, fundingDir: '', favOnly: false };
+  saveFilters();
+  syncFilterUI();
+  renderFilterTags();
+  document.getElementById('filterPanel').classList.remove('open');
+  document.getElementById('filterBtn').classList.remove('active');
+  render();
+});
 
 // ====== Hook into refresh ======
 const _origRefresh2 = refresh;
