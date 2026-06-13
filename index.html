@@ -1745,18 +1745,42 @@ async function initOptions() {
   }
 }
 
+function expToStr(ts) {
+  const d = new Date(ts);
+  return String(d.getFullYear()).slice(-2) +
+    String(d.getMonth() + 1).padStart(2, '0') +
+    String(d.getDate()).padStart(2, '0');
+}
+
 async function refreshOptData() {
   if (optState.loading) return;
   optState.loading = true;
 
   try {
-    try {
-      const idxRes = await fetch(EAPI_BASE + '/index?underlying=' + OPT_UNDERLYING);
-      if (idxRes.ok) {
-        const idxData = await idxRes.json();
-        optState.indexPrice = parseFloat(idxData.indexPrice) || optState.indexPrice;
-      }
-    } catch (e) {}
+    const [idxRes, oiRes] = await Promise.all([
+      fetch(EAPI_BASE + '/index?underlying=' + OPT_UNDERLYING).catch(() => null),
+      fetch(EAPI_BASE + '/openInterest?underlyingAsset=BTC&expiration=' + expToStr(optState.expiryTs)).catch(() => null)
+    ]);
+
+    if (idxRes && idxRes.ok) {
+      const idxData = await idxRes.json();
+      optState.indexPrice = parseFloat(idxData.indexPrice) || optState.indexPrice;
+    }
+
+    const oiMap = {};
+    if (oiRes && oiRes.ok) {
+      try {
+        const oiArr = await oiRes.json();
+        if (Array.isArray(oiArr)) {
+          oiArr.forEach(item => {
+            oiMap[item.symbol] = {
+              oi: parseFloat(item.sumOpenInterest),
+              oiValue: parseFloat(item.sumOpenInterestUsd)
+            };
+          });
+        }
+      } catch (e) {}
+    }
 
     const symbols = optState.symbols.map(s => s.symbol);
     const newData = {};
@@ -1766,24 +1790,18 @@ async function refreshOptData() {
       const batch = symbols.slice(i, i + BATCH);
       const results = await Promise.allSettled(batch.map(async sym => {
         try {
-          const [mr, or] = await Promise.all([
-            fetch(EAPI_BASE + '/mark?symbol=' + sym),
-            fetch(EAPI_BASE + '/openInterest?symbol=' + sym)
-          ]);
+          const mr = await fetch(EAPI_BASE + '/mark?symbol=' + sym);
           if (!mr.ok) return null;
           const markArr = await mr.json();
           const mark = Array.isArray(markArr) ? markArr[0] : markArr;
-          let oiData = null;
-          if (or.ok) {
-            try { const oiRaw = await or.json(); if (oiRaw && oiRaw.sumOpenInterest != null) oiData = oiRaw; } catch(e) {}
-          }
+          const oi = oiMap[sym];
           return {
             symbol: sym,
             markPrice: parseFloat(mark.markPrice),
             markIv: parseFloat(mark.markIV),
             delta: parseFloat(mark.delta),
-            oi: oiData ? parseFloat(oiData.sumOpenInterest) : null,
-            oiValue: oiData ? parseFloat(oiData.sumOpenInterestValue) : null
+            oi: oi ? oi.oi : null,
+            oiValue: oi ? oi.oiValue : null
           };
         } catch (e) { return null; }
       }));
