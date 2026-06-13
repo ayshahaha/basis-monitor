@@ -1691,7 +1691,12 @@ async function initOptions() {
       fetch(EAPI_BASE + '/exchangeInfo'),
       fetch(EAPI_BASE + '/index?underlying=' + OPT_UNDERLYING)
     ]);
-    if (!exchRes.ok || !idxRes.ok) { showOptError('API error'); return; }
+    if (!exchRes.ok || !idxRes.ok) {
+      let msg = 'API error (exch=' + exchRes.status + ' idx=' + idxRes.status + ')';
+      try { const txt = await exchRes.text(); if (txt.length < 200) msg += ' ' + txt; } catch(e){}
+      try { const txt = await idxRes.text(); if (txt.length < 200) msg += ' | ' + txt; } catch(e){}
+      showOptError(msg); return;
+    }
     const exch = await exchRes.json();
     const idxData = await idxRes.json();
 
