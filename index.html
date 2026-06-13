@@ -626,6 +626,99 @@ footer {
   th:nth-child(6), td:nth-child(6),
   th:nth-child(9), td:nth-child(9) { display: none; }
 }
+
+/* ====== Options Tab ====== */
+.opt-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px 0;
+}
+.opt-controls select {
+  background: #1e1e2e;
+  color: #cdd6f4;
+  border: 1px solid #313244;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+.opt-info {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 6px 12px;
+  background: #1e1e2e;
+  border-radius: 8px;
+  margin: 4px 0 8px;
+  font-size: 13px;
+}
+.opt-info .lbl { color: #6c7086; }
+.opt-info .val { color: #cdd6f4; font-weight: 600; }
+.opt-info .val-pos { color: #a6e3a1; }
+.opt-info .val-neg { color: #f38ba8; }
+.opt-chart-wrap {
+  position: relative;
+  background: #11111b;
+  border-radius: 8px;
+  margin: 8px 0;
+  overflow: hidden;
+}
+.opt-chart-wrap canvas {
+  display: block;
+  width: 100%;
+  height: 420px;
+}
+.opt-table-wrap {
+  max-height: 500px;
+  overflow-y: auto;
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 1px solid #313244;
+}
+.opt-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+.opt-table-wrap th {
+  position: sticky;
+  top: 0;
+  background: #181825;
+  padding: 6px 8px;
+  text-align: right;
+  border-bottom: 2px solid #313244;
+  z-index: 1;
+}
+.opt-table-wrap td {
+  padding: 4px 8px;
+  text-align: right;
+  border-bottom: 1px solid #252536;
+}
+.opt-table-wrap td:first-child,
+.opt-table-wrap th:first-child { text-align: center; }
+.opt-table-wrap .strike-row:hover { background: #252536; }
+.opt-table-wrap .row-atm { background: #1e1e3e; }
+.opt-table-wrap .c-iv { color: #89b4fa; }
+.opt-table-wrap .p-iv { color: #fab387; }
+.opt-table-wrap .c-oi { color: #89b4fa; }
+.opt-table-wrap .p-oi { color: #fab387; }
+.opt-table-wrap .c-d { color: #89b4fa; }
+.opt-table-wrap .p-d { color: #fab387; }
+.opt-loading {
+  text-align: center;
+  padding: 40px;
+  color: #6c7086;
+}
+@media (max-width: 768px) {
+  .opt-chart-wrap canvas { height: 300px; }
+  .opt-table-wrap table { font-size: 11px; }
+}
+@media (max-width: 480px) {
+  .opt-chart-wrap canvas { height: 240px; }
+  .opt-info { font-size: 11px; gap: 8px; }
+}
 </style>
 </head>
 <body>
@@ -697,6 +790,7 @@ footer {
 
 <div class="tabs">
   <button class="tab active" data-tab="monitor">📊 Monitor</button>
+  <button class="tab" data-tab="options">📊 Options</button>
 </div>
 
 <div class="tab-content" id="tab-monitor">
@@ -746,7 +840,39 @@ footer {
 
 </div><!-- /tab-monitor -->
 
-
+<div class="tab-content" id="tab-options" style="display:none">
+  <div class="opt-controls">
+    <select id="optExpiry"><option value="">Loading...</option></select>
+    <span style="color:#6c7086;font-size:13px">BTCUSDT Options · Nearest Expiry</span>
+  </div>
+  <div class="opt-info" id="optInfo">
+    <span><span class="lbl">Index:</span> <span class="val" id="optIndex">—</span></span>
+    <span><span class="lbl">ATM IV:</span> <span class="val" id="optIv">—</span></span>
+    <span><span class="lbl">DTE:</span> <span class="val" id="optDte">—</span></span>
+    <span><span class="lbl">±1SD:</span> <span class="val val-pos" id="optRange1sd">—</span></span>
+    <span><span class="lbl">±2SD:</span> <span class="val" id="optRange2sd">—</span></span>
+    <span><span class="lbl">±3SD:</span> <span class="val val-neg" id="optRange3sd">—</span></span>
+  </div>
+  <div class="opt-chart-wrap">
+    <canvas id="optChart" width="1200" height="420"></canvas>
+  </div>
+  <div class="opt-table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Strike</th>
+          <th>Call IV</th>
+          <th>Call OI</th>
+          <th>Call Δ</th>
+          <th>Put IV</th>
+          <th>Put OI</th>
+          <th>Put Δ</th>
+        </tr>
+      </thead>
+      <tbody id="optTbody"><tr><td colspan="7" class="opt-loading">Loading options data...</td></tr></tbody>
+    </table>
+  </div>
+</div>
 
 <div class="alert-overlay" id="alertOverlay">
   <div class="alert-modal">
@@ -1530,6 +1656,421 @@ document.getElementById('filterReset').addEventListener('click', () => {
 });
 document.querySelectorAll('.preset-btn').forEach(btn => {
   btn.addEventListener('click', () => applyPreset(btn.dataset.preset));
+});
+
+// ====== Options Tab ======
+const EAPI_BASE = 'https://eapi.binance.com/eapi/v1';
+const OPT_UNDERLYING = 'BTCUSDT';
+
+let optState = {
+  symbols: [], expiry: null, expiryTs: null, strikes: [],
+  callMap: {}, putMap: {}, indexPrice: 0, atmIv: 0, daysToExpiry: 0,
+  dataMap: {}, loading: false, initialized: false
+};
+
+function normalPDF(x, mu, sigma) {
+  if (sigma <= 0) return 0;
+  const z = (Math.log(x) - mu) / sigma;
+  return Math.exp(-0.5 * z * z) / (sigma * Math.sqrt(2 * Math.PI));
+}
+
+function fmtOI(v) {
+  if (v == null || isNaN(v)) return '—';
+  if (v >= 1000) return (v / 1000).toFixed(1) + 'K';
+  return v.toFixed(1);
+}
+
+function fmtIV(v) {
+  if (v == null || isNaN(v)) return '—';
+  return (v * 100).toFixed(1) + '%';
+}
+
+async function initOptions() {
+  try {
+    const [exchRes, idxRes] = await Promise.all([
+      fetch(EAPI_BASE + '/exchangeInfo'),
+      fetch(EAPI_BASE + '/index?underlying=' + OPT_UNDERLYING)
+    ]);
+    if (!exchRes.ok || !idxRes.ok) { showOptError('API error'); return; }
+    const exch = await exchRes.json();
+    const idxData = await idxRes.json();
+
+    const btcOpts = (exch.optionSymbols || []).filter(s => s.underlying === OPT_UNDERLYING);
+    if (!btcOpts.length) { showOptError('No BTCUSDT options'); return; }
+
+    const now = Date.now();
+    const expiries = [...new Set(btcOpts.map(s => s.expiryDate))].filter(e => e > now).sort((a, b) => a - b);
+    if (!expiries.length) { showOptError('No future expiry'); return; }
+    const nearestExpiry = expiries[0];
+
+    const expSymbols = btcOpts.filter(s => s.expiryDate === nearestExpiry);
+    const expiryDate = new Date(nearestExpiry);
+    const daysToExpiry = Math.max(1, Math.round((expiryDate - now) / 86400000));
+
+    const callMap = {}, putMap = {}, strikes = [];
+    expSymbols.forEach(s => {
+      const strike = parseFloat(s.strikePrice);
+      if (strike <= 0) return;
+      if (!strikes.includes(strike)) strikes.push(strike);
+      if (s.side === 'CALL') callMap[strike] = s.symbol;
+      else putMap[strike] = s.symbol;
+    });
+    strikes.sort((a, b) => a - b);
+
+    Object.assign(optState, {
+      symbols: expSymbols, expiry: expiryDate.toISOString().split('T')[0],
+      expiryTs: nearestExpiry, strikes, callMap, putMap,
+      indexPrice: parseFloat(idxData.indexPrice) || 0, dataMap: {},
+      daysToExpiry, initialized: true
+    });
+
+    const expirySelect = document.getElementById('optExpiry');
+    expirySelect.innerHTML = expiries.map(e => {
+      const d = new Date(e);
+      return '<option value="' + e + '"' + (e === nearestExpiry ? ' selected' : '') + '>' +
+        d.toISOString().split('T')[0] + '</option>';
+    }).join('');
+
+    await refreshOptData();
+    renderOptions();
+
+  } catch (err) {
+    console.error('Options init error:', err);
+    showOptError('Failed: ' + err.message);
+  }
+}
+
+async function refreshOptData() {
+  if (optState.loading) return;
+  optState.loading = true;
+
+  try {
+    try {
+      const idxRes = await fetch(EAPI_BASE + '/index?underlying=' + OPT_UNDERLYING);
+      if (idxRes.ok) {
+        const idxData = await idxRes.json();
+        optState.indexPrice = parseFloat(idxData.indexPrice) || optState.indexPrice;
+      }
+    } catch (e) {}
+
+    const symbols = optState.symbols.map(s => s.symbol);
+    const newData = {};
+    const BATCH = 20;
+
+    for (let i = 0; i < symbols.length; i += BATCH) {
+      const batch = symbols.slice(i, i + BATCH);
+      const results = await Promise.allSettled(batch.map(async sym => {
+        try {
+          const [mr, or] = await Promise.all([
+            fetch(EAPI_BASE + '/mark?symbol=' + sym),
+            fetch(EAPI_BASE + '/openInterest?symbol=' + sym)
+          ]);
+          if (!mr.ok || !or.ok) return null;
+          const mark = await mr.json();
+          const oi = await or.json();
+          return {
+            symbol: sym,
+            markPrice: parseFloat(mark.markPrice),
+            markIv: parseFloat(mark.markIV),
+            delta: parseFloat(mark.delta),
+            oi: parseFloat(oi.sumOpenInterest),
+            oiValue: parseFloat(oi.sumOpenInterestValue)
+          };
+        } catch (e) { return null; }
+      }));
+      results.forEach(r => {
+        if (r.status === 'fulfilled' && r.value) newData[r.value.symbol] = r.value;
+      });
+    }
+
+    const idx = optState.indexPrice;
+    if (idx > 0 && optState.strikes.length) {
+      let closestStrike = optState.strikes[0];
+      let minDist = Infinity;
+      optState.strikes.forEach(s => {
+        const d = Math.abs(s - idx);
+        if (d < minDist) { minDist = d; closestStrike = s; }
+      });
+
+      const atmCallSym = optState.callMap[closestStrike];
+      const atmPutSym = optState.putMap[closestStrike];
+      let atmIv = 0;
+      if (newData[atmCallSym]) atmIv = newData[atmCallSym].markIv;
+      if (newData[atmPutSym]) atmIv = atmIv > 0 ? (atmIv + newData[atmPutSym].markIv) / 2 : newData[atmPutSym].markIv;
+      optState.atmIv = atmIv;
+    }
+
+    optState.dataMap = newData;
+    optState.loading = false;
+    renderOptions();
+
+  } catch (err) {
+    console.error('Options refresh error:', err);
+    optState.loading = false;
+  }
+}
+
+function renderOptions() {
+  const { strikes, callMap, putMap, dataMap, indexPrice, atmIv, daysToExpiry } = optState;
+
+  document.getElementById('optIndex').textContent = indexPrice ? '$' + indexPrice.toFixed(2) : '—';
+  document.getElementById('optIv').textContent = fmtIV(atmIv);
+  document.getElementById('optDte').textContent = daysToExpiry ? daysToExpiry + 'd' : '—';
+
+  if (atmIv > 0 && daysToExpiry > 0 && indexPrice > 0) {
+    const sigma = atmIv * Math.sqrt(daysToExpiry / 365);
+    const sd1 = sigma * indexPrice;
+    const sd2 = 2 * sd1;
+    const sd3 = 3 * sd1;
+    document.getElementById('optRange1sd').textContent =
+      '$' + (indexPrice - sd1).toFixed(0) + ' – $' + (indexPrice + sd1).toFixed(0);
+    document.getElementById('optRange2sd').textContent =
+      '$' + (indexPrice - sd2).toFixed(0) + ' – $' + (indexPrice + sd2).toFixed(0);
+    document.getElementById('optRange3sd').textContent =
+      '$' + (indexPrice - sd3).toFixed(0) + ' – $' + (indexPrice + sd3).toFixed(0);
+  }
+
+  drawOptChart();
+
+  const tbody = document.getElementById('optTbody');
+  if (!indexPrice || !strikes.length) {
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">No data</td></tr>';
+    return;
+  }
+
+  let closestStrike = strikes[0];
+  let minDist = Infinity;
+  strikes.forEach(s => { const d = Math.abs(s - indexPrice); if (d < minDist) { minDist = d; closestStrike = s; } });
+
+  const sigma = atmIv > 0 ? atmIv * Math.sqrt(daysToExpiry / 365) : 0.5;
+  const range3sd = 3 * sigma * indexPrice;
+  const filtered = strikes.filter(s => s >= indexPrice - range3sd && s <= indexPrice + range3sd);
+
+  let html = '';
+  filtered.forEach(strike => {
+    const callSym = callMap[strike];
+    const putSym = putMap[strike];
+    const cd = dataMap[callSym];
+    const pd = dataMap[putSym];
+    const isAtm = strike === closestStrike;
+    html += '<tr class="strike-row' + (isAtm ? ' row-atm' : '') + '">' +
+      '<td style="font-weight:600">' + strike.toLocaleString() + '</td>' +
+      '<td class="c-iv">' + fmtIV(cd ? cd.markIv : null) + '</td>' +
+      '<td class="c-oi">' + fmtOI(cd ? cd.oi : null) + '</td>' +
+      '<td class="c-d">' + (cd && cd.delta != null ? cd.delta.toFixed(3) : '—') + '</td>' +
+      '<td class="p-iv">' + fmtIV(pd ? pd.markIv : null) + '</td>' +
+      '<td class="p-oi">' + fmtOI(pd ? pd.oi : null) + '</td>' +
+      '<td class="p-d">' + (pd && pd.delta != null ? pd.delta.toFixed(3) : '—') + '</td>' +
+      '</tr>';
+  });
+  tbody.innerHTML = html || '<tr><td colspan="7" class="empty-msg">No strikes in range</td></tr>';
+}
+
+function drawOptChart() {
+  const canvas = document.getElementById('optChart');
+  const parent = canvas.parentElement;
+  const w = parent.clientWidth || 1200;
+  const h = 420;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = w * dpr;
+  canvas.height = h * dpr;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const { strikes, callMap, putMap, dataMap, indexPrice, atmIv, daysToExpiry } = optState;
+  if (!indexPrice || !strikes.length || !atmIv) {
+    ctx.fillStyle = '#6c7086';
+    ctx.font = '14px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Waiting for data...', w / 2, h / 2);
+    return;
+  }
+
+  const PAD_L = 50, PAD_R = 20, PAD_T = 20, PAD_B = 20;
+  const PLOT_W = w - PAD_L - PAD_R;
+  const CHART_H = 300;
+  const OI_Y0 = PAD_T + CHART_H + 8;
+  const OI_H = h - OI_Y0 - PAD_B;
+
+  const sigma = atmIv * Math.sqrt(daysToExpiry / 365);
+  const mu = Math.log(indexPrice);
+  const zRange = 3.5;
+  const xMin = indexPrice * Math.exp(-zRange * sigma);
+  const xMax = indexPrice * Math.exp(zRange * sigma);
+  const xSpan = xMax - xMin;
+
+  function x2px(x) { return PAD_L + ((x - xMin) / xSpan) * PLOT_W; }
+
+  let yMax = 0;
+  for (let i = 0; i <= 500; i++) {
+    const x = xMin + (xSpan * i / 500);
+    yMax = Math.max(yMax, normalPDF(x, mu, sigma));
+  }
+  if (yMax <= 0) yMax = 1;
+  const yScale = CHART_H * 0.85 / yMax;
+
+  function y2px(y) { return PAD_T + CHART_H - y * yScale; }
+
+  ctx.clearRect(0, 0, w, h);
+
+  // SD shaded zones
+  const sdColors = ['rgba(166,227,161,0.10)', 'rgba(249,226,175,0.10)', 'rgba(243,139,168,0.10)'];
+  for (let s = 0; s < 3; s++) {
+    const x1 = x2px(indexPrice * Math.exp(-(s + 1) * sigma));
+    const x2 = x2px(indexPrice * Math.exp((s + 1) * sigma));
+    if (x1 < x2) {
+      ctx.fillStyle = sdColors[s];
+      ctx.fillRect(x1, PAD_T, x2 - x1, CHART_H);
+    }
+  }
+
+  // SD label lines
+  ctx.strokeStyle = '#313244';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([3, 3]);
+  for (let s = -3; s <= 3; s++) {
+    if (s === 0) continue;
+    const x = x2px(indexPrice * Math.exp(s * sigma));
+    ctx.beginPath();
+    ctx.moveTo(x, PAD_T);
+    ctx.lineTo(x, PAD_T + CHART_H);
+    ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // SD labels
+  ctx.fillStyle = '#6c7086';
+  ctx.font = '11px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  for (let s = -3; s <= 3; s++) {
+    const x = x2px(indexPrice * Math.exp(s * sigma));
+    if (x >= PAD_L && x <= w - PAD_R)
+      ctx.fillText(s === 0 ? 'ATM' : (s > 0 ? '+' : '') + s + 'SD', x, PAD_T + CHART_H - 4);
+  }
+
+  // PDF curve
+  ctx.beginPath();
+  ctx.strokeStyle = '#89b4fa';
+  ctx.lineWidth = 2;
+  let first = true;
+  for (let i = 0; i <= 500; i++) {
+    const x = xMin + (xSpan * i / 500);
+    const y = normalPDF(x, mu, sigma);
+    const px = x2px(x);
+    const py = y2px(y);
+    if (first) { ctx.moveTo(px, py); first = false; }
+    else ctx.lineTo(px, py);
+  }
+  ctx.stroke();
+
+  // Current price line
+  ctx.beginPath();
+  ctx.setLineDash([5, 4]);
+  ctx.strokeStyle = '#f38ba8';
+  ctx.lineWidth = 1.5;
+  const idxPx = x2px(indexPrice);
+  ctx.moveTo(idxPx, PAD_T);
+  ctx.lineTo(idxPx, PAD_T + CHART_H);
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Baseline for OI
+  ctx.strokeStyle = '#313244';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PAD_L, OI_Y0);
+  ctx.lineTo(w - PAD_R, OI_Y0);
+  ctx.stroke();
+
+  // OI bars
+  let maxOi = 0;
+  strikes.forEach(s => {
+    const cd = dataMap[callMap[s]];
+    const pd = dataMap[putMap[s]];
+    maxOi = Math.max(maxOi, cd ? cd.oi : 0, pd ? pd.oi : 0);
+  });
+
+  if (maxOi > 0 && OI_H > 10) {
+    const oiScale = (OI_H - 4) / maxOi;
+    const barWidth = Math.max(2, Math.min(8, (PLOT_W / strikes.length) * 0.6));
+
+    strikes.forEach(s => {
+      const px = x2px(s);
+      if (px < PAD_L || px > w - PAD_R) return;
+      const cd = dataMap[callMap[s]];
+      const pd = dataMap[putMap[s]];
+      const callOi = cd ? cd.oi : 0;
+      const putOi = pd ? pd.oi : 0;
+
+      // Call OI up
+      if (callOi > 0) {
+        const bh = callOi * oiScale;
+        ctx.fillStyle = '#89b4fa';
+        ctx.fillRect(px - barWidth / 2, OI_Y0 - bh, barWidth, bh);
+      }
+      // Put OI down
+      if (putOi > 0) {
+        const bh = putOi * oiScale;
+        ctx.fillStyle = '#fab387';
+        ctx.fillRect(px - barWidth / 2, OI_Y0, barWidth, bh);
+      }
+    });
+  }
+
+  // Strike labels on x-axis (every Nth)
+  const step = Math.max(1, Math.floor(strikes.length / 12));
+  ctx.fillStyle = '#585b70';
+  ctx.font = '10px system-ui, sans-serif';
+  ctx.textAlign = 'center';
+  for (let i = 0; i < strikes.length; i += step) {
+    const px = x2px(strikes[i]);
+    if (px >= PAD_L && px <= w - PAD_R)
+      ctx.fillText('$' + (strikes[i] / 1000).toFixed(1) + 'K', px, h - PAD_B + 4);
+  }
+
+  // Legend
+  ctx.fillStyle = '#585b70';
+  ctx.font = '10px system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#89b4fa';
+  ctx.fillRect(w - 150, PAD_T + 4, 10, 10);
+  ctx.fillStyle = '#cdd6f4';
+  ctx.fillText('Call OI', w - 135, PAD_T + 13);
+  ctx.fillStyle = '#fab387';
+  ctx.fillRect(w - 80, PAD_T + 4, 10, 10);
+  ctx.fillStyle = '#cdd6f4';
+  ctx.fillText('Put OI', w - 65, PAD_T + 13);
+}
+
+function showOptError(msg) {
+  document.getElementById('optTbody').innerHTML =
+    '<tr><td colspan="7" class="empty-msg">' + msg + '</td></tr>';
+}
+
+// Tab switching
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', function () {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(tc => tc.style.display = 'none');
+    const target = document.getElementById('tab-' + this.dataset.tab);
+    if (target) target.style.display = 'block';
+    if (this.dataset.tab === 'options' && !optState.initialized) initOptions();
+  });
+});
+
+// Options refresh every 30s
+setInterval(function () {
+  const active = document.querySelector('.tab[data-tab="options"].active');
+  if (active && optState.initialized) refreshOptData();
+}, 30000);
+
+// Canvas resize handler
+window.addEventListener('resize', function () {
+  const optTab = document.getElementById('tab-options');
+  if (optTab && optTab.style.display !== 'none' && optState.initialized) drawOptChart();
 });
 
 init();
