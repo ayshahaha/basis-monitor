@@ -1174,7 +1174,7 @@ let lastDataMap = new Map();
 const _origRender = render;
 render = function(dataMap) {
   if (arguments.length > 0) lastDataMap = dataMap;
-  // Apply filters on a clone so original dataMap stays intact for Simulate
+  // Apply filters on a clone
   const clone = new Map();
   for (const [k, v] of lastDataMap) clone.set(k, { ...v });
   applyFilters(clone);
@@ -1531,19 +1531,6 @@ document.getElementById('filterReset').addEventListener('click', () => {
 document.querySelectorAll('.preset-btn').forEach(btn => {
   btn.addEventListener('click', () => applyPreset(btn.dataset.preset));
 });
-
-// ====== Hook into refresh ======
-const _origRefresh2 = refresh;
-refresh = async function() {
-  await _origRefresh2();
-  if (lastDataMap.size > 0) {
-    checkPositions(lastDataMap);
-  }
-};
-
-loadPositions();
-loadSettings();
-renderPositions();
 
 init();
 </script>
