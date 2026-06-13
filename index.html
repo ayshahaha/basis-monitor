@@ -1770,16 +1770,20 @@ async function refreshOptData() {
             fetch(EAPI_BASE + '/mark?symbol=' + sym),
             fetch(EAPI_BASE + '/openInterest?symbol=' + sym)
           ]);
-          if (!mr.ok || !or.ok) return null;
-          const mark = await mr.json();
-          const oi = await or.json();
+          if (!mr.ok) return null;
+          const markArr = await mr.json();
+          const mark = Array.isArray(markArr) ? markArr[0] : markArr;
+          let oiData = null;
+          if (or.ok) {
+            try { const oiRaw = await or.json(); if (oiRaw && oiRaw.sumOpenInterest != null) oiData = oiRaw; } catch(e) {}
+          }
           return {
             symbol: sym,
             markPrice: parseFloat(mark.markPrice),
             markIv: parseFloat(mark.markIV),
             delta: parseFloat(mark.delta),
-            oi: parseFloat(oi.sumOpenInterest),
-            oiValue: parseFloat(oi.sumOpenInterestValue)
+            oi: oiData ? parseFloat(oiData.sumOpenInterest) : 0,
+            oiValue: oiData ? parseFloat(oiData.sumOpenInterestValue) : 0
           };
         } catch (e) { return null; }
       }));
