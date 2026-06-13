@@ -916,8 +916,8 @@ footer {
       <th data-key="symbol">Symbol <span class="sort-arrow">▼</span></th>
       <th data-key="spotPrice">Spot <span class="sort-arrow">▼</span></th>
       <th data-key="futuresPrice">Futures <span class="sort-arrow">▼</span></th>
-      <th data-key="basis" class="sorted">Basis % <span class="sort-arrow">▼</span></th>
-      <th data-key="change24h">24h Chg <span class="sort-arrow">▼</span></th>
+      <th data-key="basis">Basis % <span class="sort-arrow">▼</span></th>
+      <th data-key="change24h" class="sorted">24h Chg <span class="sort-arrow">▼</span></th>
       <th data-key="volume24h">Vol 24h <span class="sort-arrow">▼</span></th>
       <th data-key="fundingRate">Funding <span class="sort-arrow">▼</span></th>
       <th data-key="nextFunding">Next Funding <span class="sort-arrow">▼</span></th>
@@ -1047,7 +1047,7 @@ const DEFAULT_REFRESH = 3000;
 
 // ====== State ======
 let symbols = [];
-let sortKey = 'basis';
+let sortKey = 'change24h';
 let sortDir = 'desc';
 let searchTerm = '';
 let paused = false;
