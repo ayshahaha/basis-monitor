@@ -1,25 +1,31 @@
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', '*');
-  if (req.method === 'OPTIONS') { res.status(200).end(); return; }
+export const config = {
+  runtime: 'edge'
+};
 
-  const { path: rawPath, ...query } = req.query;
-  const cleanPath = (rawPath || '').replace(/^\//, '');
-  const qs = new URLSearchParams(query).toString();
-  const url = `https://eapi.binance.com/eapi/v1/${cleanPath}${qs ? '?' + qs : ''}`;
+export default async function handler(req) {
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Allow-Headers': '*'
+  };
+  if (req.method === 'OPTIONS') return new Response(null, { status: 200, headers: corsHeaders });
+
+  const url = new URL(req.url);
+  const path = (url.searchParams.get('path') || '').replace(/^\//, '');
+  url.searchParams.delete('path');
+  const qs = url.searchParams.toString();
+  const target = 'https://eapi.binance.com/eapi/v1/' + path + (qs ? '?' + qs : '');
 
   try {
-    const response = await fetch(url, { headers: { 'User-Agent': 'basis-monitor/1.0' } });
-    let data;
-    const contentType = response.headers.get('content-type') || '';
-    if (contentType.includes('application/json')) {
-      data = await response.json();
-    } else {
-      data = { error: 'non-json response', status: response.status, text: await response.text().catch(() => '') };
-    }
-    res.status(response.status).json(data);
+    const resp = await fetch(target);
+    const body = await resp.arrayBuffer();
+    const respHeaders = { ...corsHeaders };
+    if (resp.headers.get('content-type')) respHeaders['Content-Type'] = resp.headers.get('content-type');
+    return new Response(body, { status: resp.status, headers: respHeaders });
   } catch (err) {
-    res.status(500).json({ error: err.message, url });
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 }
