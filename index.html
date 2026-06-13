@@ -1782,8 +1782,8 @@ async function refreshOptData() {
             markPrice: parseFloat(mark.markPrice),
             markIv: parseFloat(mark.markIV),
             delta: parseFloat(mark.delta),
-            oi: oiData ? parseFloat(oiData.sumOpenInterest) : 0,
-            oiValue: oiData ? parseFloat(oiData.sumOpenInterestValue) : 0
+            oi: oiData ? parseFloat(oiData.sumOpenInterest) : null,
+            oiValue: oiData ? parseFloat(oiData.sumOpenInterestValue) : null
           };
         } catch (e) { return null; }
       }));
