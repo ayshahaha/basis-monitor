@@ -1115,7 +1115,7 @@ async function init() {
       const r = localStorage.getItem('basisInterval');
       if (r) refreshMs = parseInt(r) || DEFAULT_REFRESH;
       const fl = localStorage.getItem('basisFilters');
-      if (fl) { filters = JSON.parse(fl); } else { filters = { ...PRESETS.posBasis.filters }; }
+      if (fl) { filters = JSON.parse(fl); } else { filters = { chgMin: 10, volMin: 10000000 }; }
     } catch(e) {}
     document.getElementById('intervalSelect').value = String(refreshMs);
     syncFilterUI();
